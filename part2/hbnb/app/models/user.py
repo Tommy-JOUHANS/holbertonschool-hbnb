@@ -24,6 +24,9 @@ class User(BaseModel):
         if not isinstance(email, str) or not email.strip():
             raise ValueError("Email is required")
 
+        if not isinstance(email, str) or not email.strip():
+            raise ValueError("Email is required")
+
         if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
             raise ValueError("Invalid email format")
 
