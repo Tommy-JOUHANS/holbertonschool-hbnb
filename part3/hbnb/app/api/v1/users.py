@@ -110,4 +110,3 @@ class UserResource(Resource):
             return user.to_dict(), 200
         except ValueError as e:
             return {"error": str(e)}, 400
-EOF
