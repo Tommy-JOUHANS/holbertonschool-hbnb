@@ -21,8 +21,14 @@ def create_app():
     """
     app = Flask(__name__)
 
+def create_app(config_class=config.DevelopmentConfig):
+   #
+   # Existent code with app Flask instance
+   # ...
+   bcrypt.init_app(app)
     @app.route("/")
-    def home():
+  
+  def home():
         return "Welcome to the HBnB API! Visit /api/v1/ for documentation."
 
     api = Api(app, version="1.0", title="HBnB API", description="HBnB Application REST API", doc="/api/v1/")
