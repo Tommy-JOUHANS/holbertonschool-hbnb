@@ -1,4 +1,3 @@
-cat > /root/holbertonschool-hbnb/part3/hbnb/app/api/v1/places.py << 'EOF'
 """
 Place API endpoints.
 Handles CRUD operations for places.
@@ -84,4 +83,3 @@ class PlaceResource(Resource):
             return updated_place.to_dict(), 200
         except ValueError as e:
             return {'error': str(e)}, 400
-EOF
