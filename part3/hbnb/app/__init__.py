@@ -9,12 +9,11 @@ from hbnb.app.api.v1.users import api as users_ns
 from hbnb.app.api.v1.places import api as places_ns
 from hbnb.app.api.v1.amenities import api as amenities_ns
 from hbnb.app.api.v1.reviews import api as reviews_ns
-from hbnb.app import config
 
 bcrypt = Bcrypt()
 
 
-def create_app(config_class=config.DevelopmentConfig):
+def create_app(config_class=None):
     """
     Creates and configures the Flask application.
     
@@ -25,6 +24,12 @@ def create_app(config_class=config.DevelopmentConfig):
         Flask application instance
     """
     app = Flask(__name__)
+    
+    # Import config here to avoid circular import
+    if config_class is None:
+        from hbnb.app.config import DevelopmentConfig
+        config_class = DevelopmentConfig
+    
     app.config.from_object(config_class)
     
     # Initialize extensions
