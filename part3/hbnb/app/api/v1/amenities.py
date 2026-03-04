@@ -1,73 +1,74 @@
 """
 Amenity API endpoints.
-Handles CRUD operations (no DELETE in Part 2).
+Handles CRUD operations for amenities.
 """
-
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt
 from hbnb.app.services import facade
 
-api = Namespace("amenities", description="Amenity operations")
+api = Namespace('amenities', description='Amenity operations')
 
-
-
-amenity_model = api.model("Amenity", {
-    "id": fields.String(),
-    "name": fields.String(required=True),
-    "description": fields.String()
+# Model for amenity
+amenity_model = api.model('Amenity', {
+    'id': fields.String(readOnly=True, description='Amenity ID'),
+    'name': fields.String(required=True, description='Name of the amenity')
 })
 
 
-@api.route("/")
+@api.route('/')
 class AmenityList(Resource):
-    """
-    Handles amenity collection operations.
-    """
-
-    @api.expect(amenity_model, validate=True)
-    @api.response(201, "Amenity created")
-    @api.response(400, "Invalid input")
-    @api.marshal_with(amenity_model, skip_none=True)
-    def post(self):
-        """Create amenity"""
-        try:
-            amenity = facade.create_amenity(api.payload)
-            return amenity.to_dict(), 201
-        except ValueError as e:
-            return {"error": str(e)}, 400
-
-    @api.response(200, "Amenities retrieved")
-    @api.marshal_with(amenity_model, skip_none=True)
+    @api.doc('list_amenities')
     def get(self):
-        """Get all amenities"""
+        """Get all amenities (Public)"""
         amenities = facade.get_all_amenities()
-        return [a.to_dict() for a in amenities], 200
-
-
-@api.route("/<string:amenity_id>")
-class AmenityResource(Resource):
-    """
-    Handles single amenity operations.
-    """
-
-    @api.response(200, "Amenity retrieved")
-    @api.response(404, "Amenity not found")
-    @api.marshal_with(amenity_model, skip_none=True)
-    def get(self, amenity_id):
-        """Get amenity by ID"""
-        amenity = facade.get_amenity(amenity_id)
-        if not amenity:
-            return {"error": "Amenity not found"}, 404
-        return amenity.to_dict(), 200
-
+        return [amenity.to_dict() for amenity in amenities], 200
+    
+    @api.doc('create_amenity')
     @api.expect(amenity_model, validate=True)
-    @api.response(200, "Amenity updated")
-    @api.response(404, "Amenity not found")
-    @api.marshal_with(amenity_model, skip_none=True)
-    def put(self, amenity_id):
-        """Update amenity"""
+    @jwt_required()
+    def post(self):
+        """Create a new amenity (Admin only)"""
+        current_user = get_jwt()
+        
+        # Check if user is admin
+        if not current_user.get('is_admin', False):
+            return {"error": "Admin privileges required"}, 403
+        
+        try:
+            amenity_data = api.payload
+            new_amenity = facade.create_amenity(amenity_data)
+            return new_amenity.to_dict(), 201
+        except ValueError as e:
+            return {'error': str(e)}, 400
+
+
+@api.route('/<amenity_id>')
+class AmenityResource(Resource):
+    @api.doc('get_amenity')
+    def get(self, amenity_id):
+        """Get amenity by ID (Public)"""
         amenity = facade.get_amenity(amenity_id)
         if not amenity:
-            return {"error": "Amenity not found"}, 404
-        amenity.update(api.payload)
+            return {'error': 'Amenity not found'}, 404
         return amenity.to_dict(), 200
     
+    @api.doc('update_amenity')
+    @api.expect(amenity_model, validate=True)
+    @jwt_required()
+    def put(self, amenity_id):
+        """Update an amenity (Admin only)"""
+        current_user = get_jwt()
+        
+        # Check if user is admin
+        if not current_user.get('is_admin', False):
+            return {"error": "Admin privileges required"}, 403
+        
+        amenity = facade.get_amenity(amenity_id)
+        if not amenity:
+            return {'error': 'Amenity not found'}, 404
+        
+        try:
+            amenity.update(api.payload)
+            return amenity.to_dict(), 200
+        except ValueError as e:
+            return {'error': str(e)}, 400
