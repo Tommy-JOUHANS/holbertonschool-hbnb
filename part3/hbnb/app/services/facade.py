@@ -1,16 +1,37 @@
 """
 Facade layer connecting API and business logic.
+Supports both in-memory and database persistence.
 """
+import os
 from hbnb.app.models import User, Place, Review, Amenity
-from hbnb.app.persistence.repository import InMemoryRepository
+from hbnb.app.persistence import get_repository
+
+# Determine which repository to use based on environment
+USE_DATABASE = os.getenv('USE_DATABASE', 'false').lower() == 'true'
+
+if USE_DATABASE:
+    from hbnb.app.persistence.repository import SQLAlchemyRepository as RepositoryClass
+    print("Using SQLAlchemy Repository")
+else:
+    from hbnb.app.persistence.repository import InMemoryRepository as RepositoryClass
+    print("Using InMemory Repository")
 
 
 class HBnBFacade:
     def __init__(self):
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        """Initialize repositories based on configuration"""
+        if USE_DATABASE:
+            # SQLAlchemy repositories (will be used after model mapping)
+            self.user_repo = RepositoryClass(User)
+            self.place_repo = RepositoryClass(Place)
+            self.review_repo = RepositoryClass(Review)
+            self.amenity_repo = RepositoryClass(Amenity)
+        else:
+            # In-memory repositories
+            self.user_repo = RepositoryClass()
+            self.place_repo = RepositoryClass()
+            self.review_repo = RepositoryClass()
+            self.amenity_repo = RepositoryClass()
     
     # =========================
     # USER
@@ -22,7 +43,6 @@ class HBnBFacade:
             raise ValueError("Email already exists")
         
         user = User(**user_data)
-        
         self.user_repo.add(user)
         
         return user
