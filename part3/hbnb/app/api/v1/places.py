@@ -3,7 +3,7 @@ Place API endpoints.
 Handles CRUD operations for places.
 """
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from hbnb.app.services import facade
 
 api = Namespace('places', description='Place operations')
@@ -17,7 +17,7 @@ place_model = api.model('Place', {
     'longitude': fields.Float(required=True, description='Longitude of the place')
 })
 
-# Model for updating a place (all fields optional)
+# Model for updating a place
 place_update_model = api.model('PlaceUpdate', {
     'title': fields.String(description='Title of the place'),
     'description': fields.String(description='Description of the place'),
@@ -67,15 +67,18 @@ class PlaceResource(Resource):
     @api.expect(place_update_model, validate=True)
     @jwt_required()
     def put(self, place_id):
-        """Update a place (Owner only)"""
-        current_user = get_jwt_identity()
+        """Update a place (Owner or Admin)"""
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
         place = facade.get_place(place_id)
         
         if not place:
             return {'error': 'Place not found'}, 404
         
-        # Check if the current user is the owner
-        if place.owner_id != current_user:
+        # Check if user is owner or admin
+        if not is_admin and place.owner_id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
         try:
