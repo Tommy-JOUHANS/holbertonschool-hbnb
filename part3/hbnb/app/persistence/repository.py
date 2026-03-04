@@ -3,7 +3,6 @@ Repository implementations for data persistence.
 Supports both in-memory and SQLAlchemy-based persistence.
 """
 from abc import ABC, abstractmethod
-from hbnb.app import db
 
 
 class Repository(ABC):
@@ -81,11 +80,15 @@ class SQLAlchemyRepository(Repository):
     
     def add(self, obj):
         """Add an object to the database"""
+        # Import db locally to avoid circular import
+        from hbnb.app import db
         db.session.add(obj)
         db.session.commit()
     
     def get(self, obj_id):
         """Get an object by ID"""
+        # Import db locally to avoid circular import
+        from hbnb.app import db
         return db.session.get(self.model, obj_id)
     
     def get_all(self):
@@ -94,6 +97,8 @@ class SQLAlchemyRepository(Repository):
     
     def update(self, obj_id, data):
         """Update an object with new data"""
+        # Import db locally to avoid circular import
+        from hbnb.app import db
         obj = self.get(obj_id)
         if obj:
             for key, value in data.items():
@@ -104,6 +109,8 @@ class SQLAlchemyRepository(Repository):
     
     def delete(self, obj_id):
         """Delete an object by ID"""
+        # Import db locally to avoid circular import
+        from hbnb.app import db
         obj = self.get(obj_id)
         if obj:
             db.session.delete(obj)
