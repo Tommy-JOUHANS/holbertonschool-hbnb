@@ -129,6 +129,19 @@ class HBnBFacade:
     def get_all_reviews(self):
         return self.review_repo.get_all()
     
+    def get_reviews_by_place(self, place_id):
+        """
+        Get all reviews for a specific place.
+        
+        Args:
+            place_id (str): Place ID
+            
+        Returns:
+            list: List of Review objects for the specified place
+        """
+        all_reviews = self.review_repo.get_all()
+        return [review for review in all_reviews if review.place_id == place_id]
+    
     def delete_review(self, review_id):
         review = self.review_repo.get(review_id)
         if not review:
