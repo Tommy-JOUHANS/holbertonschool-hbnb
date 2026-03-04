@@ -1,11 +1,14 @@
 """
-In-memory repository implementation.
-Used for temporary storage before database integration.
+Repository implementations for data persistence.
+Supports both in-memory and SQLAlchemy-based persistence.
 """
 from abc import ABC, abstractmethod
+from hbnb.app import db
 
 
 class Repository(ABC):
+    """Abstract base repository interface"""
+    
     @abstractmethod
     def add(self, obj):
         pass
@@ -32,6 +35,8 @@ class Repository(ABC):
 
 
 class InMemoryRepository(Repository):
+    """In-memory repository implementation"""
+    
     def __init__(self):
         self._storage = {}
     
@@ -56,7 +61,54 @@ class InMemoryRepository(Repository):
             del self._storage[obj_id]
     
     def get_by_attribute(self, attr_name, attr_value):
-        for obj in self._storage.values():  # ✅ Correction ici
+        for obj in self._storage.values():
             if getattr(obj, attr_name, None) == attr_value:
                 return obj
         return None
+
+
+class SQLAlchemyRepository(Repository):
+    """SQLAlchemy-based repository implementation"""
+    
+    def __init__(self, model):
+        """
+        Initialize repository with a SQLAlchemy model.
+        
+        Args:
+            model: SQLAlchemy model class
+        """
+        self.model = model
+    
+    def add(self, obj):
+        """Add an object to the database"""
+        db.session.add(obj)
+        db.session.commit()
+    
+    def get(self, obj_id):
+        """Get an object by ID"""
+        return db.session.get(self.model, obj_id)
+    
+    def get_all(self):
+        """Get all objects"""
+        return self.model.query.all()
+    
+    def update(self, obj_id, data):
+        """Update an object with new data"""
+        obj = self.get(obj_id)
+        if obj:
+            for key, value in data.items():
+                setattr(obj, key, value)
+            db.session.commit()
+            return obj
+        return None
+    
+    def delete(self, obj_id):
+        """Delete an object by ID"""
+        obj = self.get(obj_id)
+        if obj:
+            db.session.delete(obj)
+            db.session.commit()
+    
+    def get_by_attribute(self, attr_name, attr_value):
+        """Get an object by a specific attribute"""
+        return self.model.query.filter_by(**{attr_name: attr_value}).first()
