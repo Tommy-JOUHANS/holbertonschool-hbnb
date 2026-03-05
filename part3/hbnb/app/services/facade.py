@@ -38,7 +38,8 @@ class HBnBFacade:
     # =========================
     
     def create_user(self, user_data):
-        existing_user = self.user_repo.get_by_attribute("email", user_data["email"])
+        """Create a new user with validation"""
+        existing_user = self.get_user_by_email(user_data["email"])
         if existing_user:
             raise ValueError("Email already exists")
         
@@ -48,6 +49,7 @@ class HBnBFacade:
         return user
     
     def get_user(self, user_id):
+        """Get user by ID"""
         return self.user_repo.get(user_id)
     
     def get_user_by_email(self, email):
@@ -63,24 +65,45 @@ class HBnBFacade:
         return self.user_repo.get_by_attribute("email", email)
     
     def get_all_users(self):
+        """Get all users"""
         return self.user_repo.get_all()
+    
+    def update_user(self, user_id, update_data):
+        """Update user with new data"""
+        user = self.user_repo.get(user_id)
+        if not user:
+            raise ValueError("User not found")
+        user.update(update_data)
+        return user
     
     # =========================
     # AMENITY
     # =========================
     
     def create_amenity(self, amenity_data):
+        """Create a new amenity"""
         amenity = Amenity(**amenity_data)
         self.amenity_repo.add(amenity)
         return amenity
     
     def get_amenity(self, amenity_id):
+        """Get amenity by ID"""
         return self.amenity_repo.get(amenity_id)
     
     def get_all_amenities(self):
+        """Get all amenities"""
         return self.amenity_repo.get_all()
     
+    def update_amenity(self, amenity_id, update_data):
+        """Update amenity with new data"""
+        amenity = self.amenity_repo.get(amenity_id)
+        if not amenity:
+            raise ValueError("Amenity not found")
+        amenity.update(update_data)
+        return amenity
+    
     def add_amenity_to_place(self, place_id, amenity_id):
+        """Add amenity to a place"""
         place = self.place_repo.get(place_id)
         if not place:
             raise ValueError("Place not found")
@@ -100,6 +123,7 @@ class HBnBFacade:
     # =========================
     
     def create_place(self, place_data):
+        """Create a new place"""
         owner = self.user_repo.get(place_data["owner_id"])
         if not owner:
             raise ValueError("Owner not found")
@@ -108,18 +132,20 @@ class HBnBFacade:
         return place
     
     def get_place(self, place_id):
+        """Get place by ID"""
         return self.place_repo.get(place_id)
     
     def get_all_places(self):
+        """Get all places"""
         return self.place_repo.get_all()
     
     def update_place(self, place_id, update_data):
         """Update place with new data"""
-        # Use repository update to ensure commit if using SQLAlchemy
-        updated_place = self.place_repo.update(place_id, update_data)
-        if not updated_place:
+        place = self.place_repo.get(place_id)
+        if not place:
             raise ValueError("Place not found")
-        return updated_place
+        place.update(update_data)
+        return place
     
     # =========================
     # REVIEW
@@ -136,14 +162,19 @@ class HBnBFacade:
         if not user:
             raise ValueError("User not found")
         
-        """Create review and associate with place"""
+        # Create review and associate with place
         review = Review(**review_data)
         
-        """Link review to place and add to place's reviews list"""
+        # Link review to place and add to place's reviews list
         self.review_repo.add(review)
         
-        place.add_review(review)
-        user.reviews.append(review)
+        if hasattr(place, 'add_review'):
+            place.add_review(review)
+        
+        if hasattr(user, 'reviews'):
+            if not hasattr(user, 'reviews') or user.reviews is None:
+                user.reviews = []
+            user.reviews.append(review)
         
         # Commit relationships if using SQLAlchemy
         if USE_DATABASE:
@@ -153,9 +184,11 @@ class HBnBFacade:
         return review
     
     def get_review(self, review_id):
+        """Get review by ID"""
         return self.review_repo.get(review_id)
     
     def get_all_reviews(self):
+        """Get all reviews"""
         return self.review_repo.get_all()
     
     def get_reviews_by_place(self, place_id):
@@ -171,24 +204,39 @@ class HBnBFacade:
         all_reviews = self.review_repo.get_all()
         return [review for review in all_reviews if review.place_id == place_id]
     
+    def update_review(self, review_id, update_data):
+        """Update review with new data"""
+        review = self.review_repo.get(review_id)
+        if not review:
+            raise ValueError("Review not found")
+        review.update(update_data)
+        return review
+    
     def delete_review(self, review_id):
+        """Delete a review"""
         review = self.review_repo.get(review_id)
         if not review:
             raise ValueError("Review not found")
         
-        """Also remove review from associated place"""
-        place = review.place
-        if place and review in place.reviews:
-            place.reviews.remove(review)
-            if USE_DATABASE:
-                self.place_repo.update(place.id, {})
+        # Also remove review from associated place
+        if hasattr(review, 'place_id'):
+            place = self.place_repo.get(review.place_id)
+            if place and hasattr(place, 'reviews') and review in place.reviews:
+                place.reviews.remove(review)
+                if USE_DATABASE:
+                    self.place_repo.update(place.id, {})
         
-        """Also remove review from associated user"""
-        user = review.user
-        if user and review in user.reviews:
-            user.reviews.remove(review)
-            if USE_DATABASE:
-                self.user_repo.update(user.id, {})
+        # Also remove review from associated user
+        if hasattr(review, 'user_id'):
+            user = self.user_repo.get(review.user_id)
+            if user and hasattr(user, 'reviews') and user.reviews and review in user.reviews:
+                user.reviews.remove(review)
+                if USE_DATABASE:
+                    self.user_repo.update(user.id, {})
         
-        """Finally, delete review from repository"""
+        # Finally, delete review from repository
         self.review_repo.delete(review_id)
+
+
+# Create a singleton instance of the facade
+facade = HBnBFacade()
