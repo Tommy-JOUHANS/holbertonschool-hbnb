@@ -45,4 +45,28 @@ def create_app(config_class=None):
     api.add_namespace(amenities_ns, path="/api/v1/amenities")
     api.add_namespace(auth_ns, path="/api/v1/auth")
     
+    # Initialize test data (admin user)
+    with app.app_context():
+        from hbnb.app.services import facade
+        from hbnb.app.utils import hash_password
+        
+        # Check if admin already exists
+        existing_admin = facade.get_user_by_email("admin@example.com")
+        
+        if not existing_admin:
+            try:
+                admin_data = {
+                    "first_name": "Admin",
+                    "last_name": "User",
+                    "email": "admin@example.com",
+                    "password": hash_password("admin123"),
+                    "is_admin": True
+                }
+                admin = facade.create_user(admin_data)
+                print(f"✅ Admin user initialized with ID: {admin.id}")
+            except Exception as e:
+                print(f"⚠️  Could not initialize admin user: {e}")
+        else:
+            print("✅ Admin user already exists")
+    
     return app
