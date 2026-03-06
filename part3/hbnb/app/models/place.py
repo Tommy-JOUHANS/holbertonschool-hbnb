@@ -5,13 +5,15 @@ Supports both owner object and owner_id.
 
 from hbnb.app.models.base_model import BaseModel
 from hbnb.app import db
+import uuid
 
 
 class Place(BaseModel, db.Model):
     """Place model mapped with SQLAlchemy"""
     __tablename__ = "places"
 
-    id = db.Column(db.Integer, primary_key=True)
+    # ✅ Utilisation d'un UUID comme clé primaire
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024), nullable=True)
     price = db.Column(db.Float, nullable=False)
