@@ -1,33 +1,26 @@
-"""
-Amenity entity model.
-"""
-
-from hbnb.app.models.base_model import BaseModel
+from datetime import datetime
 from hbnb.app import db
-import uuid
 
-
-class Amenity(BaseModel, db.Model):
-    """Amenity model mapped with SQLAlchemy"""
-    __tablename__ = "amenities"
-
-    # ✅ UUID pour l'ID
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(128), nullable=False)
-    description = db.Column(db.String(1024), nullable=True)
-
-    def __init__(self, name, description=None):
-        super().__init__()
-
-        if not isinstance(name, str) or not name.strip():
-            raise ValueError("Amenity name is required")
-
-        self.name = name
-        self.description = description
-
+class Amenity(db.Model):
+    """Amenity model"""
+    __tablename__ = 'amenities'
+    
+    # ✅ INTEGER avec autoincrement (pas de UUID)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    description = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, 
+                          onupdate=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<Amenity {self.name}>'
+    
     def to_dict(self):
         return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
         }
