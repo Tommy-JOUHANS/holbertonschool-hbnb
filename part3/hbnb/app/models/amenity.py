@@ -4,13 +4,15 @@ Amenity entity model.
 
 from hbnb.app.models.base_model import BaseModel
 from hbnb.app import db
+import uuid
 
 
 class Amenity(BaseModel, db.Model):
     """Amenity model mapped with SQLAlchemy"""
     __tablename__ = "amenities"
 
-    id = db.Column(db.Integer, primary_key=True)
+    # ✅ UUID pour l'ID
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.String(1024), nullable=True)
 
