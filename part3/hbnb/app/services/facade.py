@@ -201,8 +201,25 @@ class HBnBFacade:
         Returns:
             list: List of Review objects for the specified place
         """
+        # ✅ CORRIGÉ: Filtrer seulement les Reviews qui ont place_id
         all_reviews = self.review_repo.get_all()
-        return [review for review in all_reviews if review.place_id == place_id]
+        return [review for review in all_reviews 
+                if isinstance(review, Review) and hasattr(review, 'place_id') and review.place_id == place_id]
+    
+    # ✅ NOUVELLE MÉTHODE: Ajouter pour obtenir les reviews d'un utilisateur
+    def get_reviews_by_user(self, user_id):
+        """
+        Get all reviews by a specific user.
+        
+        Args:
+            user_id (str): User ID
+            
+        Returns:
+            list: List of Review objects by the specified user
+        """
+        all_reviews = self.review_repo.get_all()
+        return [review for review in all_reviews 
+                if isinstance(review, Review) and hasattr(review, 'user_id') and review.user_id == user_id]
     
     def update_review(self, review_id, update_data):
         """Update review with new data"""
