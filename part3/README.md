@@ -25,22 +25,52 @@ The project also introduces:
 - ER diagrams and SQL schema scripts
 
 ---
+## Project Directory Structure
+```shell
+hbnb/
+│
+├── run.py
+├── config.py
+├── requirements.txt
+│
+├── app/
+│   ├── __init__.py
+│   ├── api/
+│   │   └── v1/
+│   │       ├── auth.py
+│   │       ├── users.py
+│   │       ├── places.py
+│   │       ├── reviews.py
+│   │       └── amenities.py
+│   │
+│   ├── models/
+│   │   ├── base_model.py
+│   │   ├── user.py
+│   │   ├── place.py
+│   │   ├── review.py
+│   │   └── amenity.py
+│   │
+│   ├── persistence/
+│   │   ├── repository.py
+│   │   └── sqlalchemy_repository.py
+│   │
+│   └── services/
+│       └── facade.py
+│
+├── sql/
+│   ├── schema.sql
+│   └── seed.sql
+│
+└── tests/
+
+```
+
 
 ## Project Architecture
 
 The backend follows a layered architecture that separates concerns across different components.
 
-Client
-   |
-REST API (Flask + Flask-Restx)
-   |
-Service Layer (Facade)
-   |
-Repository Layer
-   |
-SQLAlchemy ORM
-   |
-Database (SQLite / MySQL)
+![ER diagram with Mermaid](images/structure1.png)
 
 **Each layer plays a specific role:**
 
@@ -149,18 +179,164 @@ Two methods were added to the User model:
 ```python
 def hash_password(self, password):
     self.password = bcrypt.generate_password_hash(password).decode("utf-8")
+```
+
+**Password Verification**
+
+```python
+def verify_password(self, password):
+    return bcrypt.check_password_hash(self.password, password)
+```
+
+**Security Improvements**
+
+- Passwords are never stored in plain text
+
+- Passwords are never returned in API responses
+
+- Authentication relies on password verification rather than comparison
 
 ---
 ### Task 2/ Implement JWT Authentication with `flask-jwt-extended`
+**Objective**
+
+JWT authentication allows the API to securely authenticate users without maintaining server-side sessions.
+
+Once a user logs in successfully, the server generates 
+a JWT token that the client must include in future requests.
+
+*Login Endpoint*
+
+POST /api/v1/auth/login
+
+*Implementation*
+
+```python
+@api.route('/login')
+class Login(Resource):
+
+    def post(self):
+
+        credentials = api.payload
+        user = facade.get_user_by_email(credentials["email"])
+
+        if not user or not user.verify_password(credentials["password"]):
+            return {"error": "Invalid credentials"}, 401
+
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={"is_admin": user.is_admin}
+        )
+
+        return {"access_token": access_token}, 200
+```
+**JWT Workflow**
+
+- User sends login request with email and password
+
+- Server validates credentials
+
+- Server generates JWT token
+
+- Client stores token
+
+- Token is sent with each protected request
+
+Example:
+
+*Authorization: Bearer JWT_TOKEN*
 
 ---
 ### Task 3/ Implement Authenticated User Access Endpoints
 
+*Objective*
+
+Certain API operations must only be accessible by authenticated users.
+
+The following endpoints require a valid JWT:
+
+- Create a place
+
+- Update a place
+
+- Create a review
+
+- Update a review
+
+- Delete a review
+
+- Update user profile
+
+
+**Example Implementation**
+```python
+@jwt_required()
+def post(self):
+
+    current_user = get_jwt_identity()
+
+    data = api.payload
+    data["owner_id"] = current_user
+
+    place = facade.create_place(data)
+
+    return place.to_dict(), 201
+```
+
+**Ownership Validation**
+
+Users cannot modify resources that they do not own.
+
+Example:
+```python
+if place.owner_id != current_user:
+    return {"error": "Unauthorized action"}, 403
+```
+
+
 ---
 ### Task 4/ Implement Administrator Access Endpoints
 
+**Objective**
+
+- Administrators have higher privileges and can manage system resources.
+
+- Admin-only actions include:
+
+- Creating users
+
+- Modifying user accounts
+
+- Adding amenities
+
+- Updating amenities
+
+**Admin Check Implementation**
+
+```python
+claims = get_jwt()
+
+if not claims.get("is_admin"):
+    return {"error": "Admin privileges required"}, 403
+```
+
+**Example Admin Endpoint**
+*POST /api/v1/amenities*
+
+Only administrators can perform this operation.
+
 ---
 ### Task 5/ Implement SQLAlchemy Repository
+
+**Objective**
+
+The repository pattern separates database operations from business logic.
+
+This improves maintainability and makes the system easier to test.
+
+**Repository Implementation**
+
+
 
 ---
 ### Task 6/ Map the User Entity to SQLAlchemy Model
@@ -178,10 +354,180 @@ def hash_password(self, password):
 ---
 ### Task 10/ Generate Database Diagrams
 
+*The database schema is represented using Mermaid ER diagrams.*
+
+**Generate code: ER diagram with Mermaid:**
+
+```mermaid
+
+erDiagram
+    USER {
+        UUID id PK
+        varchar first_name
+        varchar last_name
+        varchar email
+        varchar password
+        boolean is_admin
+    }
+
+    PLACE {
+        UUID id PK
+        varchar title
+        text description
+        decimal price
+        float latitude
+        float longitude
+        UUID owner_id FK
+    }
+
+    REVIEW {
+        UUID id PK
+        text text
+        int rating
+        UUID user_id FK
+        UUID place_id FK
+    }
+
+    AMENITY {
+        UUID id PK
+        varchar name
+    }
+
+    PLACE_AMENITY {
+        UUID place_id FK
+        UUID amenity_id FK
+    }
+
+    USER ||--o{ PLACE : owns
+    USER ||--o{ REVIEW : writes
+    PLACE ||--o{ REVIEW : receives
+    PLACE ||--o{ PLACE_AMENITY : has
+    AMENITY ||--o{ PLACE_AMENITY : linked_to
+    
+```
+
+
+**ER diagram with Mermaid:**
+![ER diagram with Mermaid](images/er-diagram-mermaid.png)
+
+
+**ER diagram with Lucid:**
+![ER diagram with Lucid](images/diagrame-ERD1.png)
+
+
+** Generate code: ER diagram and new entity: Reservations  with Mermaid:**
+
+```mermaid
+
+erDiagram
+    USER {
+        UUID id PK
+        varchar first_name
+        varchar last_name
+        varchar email
+        varchar password
+        boolean is_admin
+    }
+
+    PLACE {
+        UUID id PK
+        varchar title
+        text description
+        decimal price
+        float latitude
+        float longitude
+        UUID owner_id FK
+    }
+
+    REVIEW {
+        UUID id PK
+        text text
+        int rating
+        UUID user_id FK
+        UUID place_id FK
+    }
+
+    AMENITY {
+        UUID id PK
+        varchar name
+    }
+
+    PLACE_AMENITY {
+        UUID place_id FK
+        UUID amenity_id FK
+    }
+
+    RESERVATION {
+        UUID id PK
+        UUID user_id FK
+        UUID place_id FK
+        date start_date
+        date end_date
+        varchar status
+    }
+
+    USER ||--o{ PLACE : owns
+    USER ||--o{ REVIEW : writes
+    PLACE ||--o{ REVIEW : receives
+    PLACE ||--o{ PLACE_AMENITY : has
+    AMENITY ||--o{ PLACE_AMENITY : linked_to
+
+    USER ||--o{ RESERVATION : books
+    PLACE ||--o{ RESERVATION : is_reserved_for
+
+
+    
+```
+**ER diagram and new entity: Reservations  with Mermaid:**
+![New entity: Reservations](images/mermaid-diagram-er-reservation.png)
+
+
+### API Testing
+Create User
+POST /api/v1/users
+Login
+POST /api/v1/auth/login
+
+Example:
+```shell
+curl -X POST http://localhost:5000/api/v1/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email":"admin@hbnb.io","password":"admin1234"}'
+```
+
+### Database Initialization
+```shell
+mysql -u root -p < sql/schema.sql
+mysql -u root -p hbnb < sql/seed.sql
+```
+
+
+## Conclusion
+
+This phase of the HBnB project transforms the backend into a secure and scalable system by integrating:
+
+- JWT authentication
+
+- Role-based access control
+
+- SQLAlchemy ORM
+
+- Repository design pattern
+
+- SQL database schema
+
+- ER database diagrams
+
+The final system now supports secure authentication, 
+persistent storage,
+and structured data relationships, 
+making it suitable for real-world application deployment.
+
 ---
 ## Authors
 
 **- Tommy JOUHANS**
+
 **- James ROUSSEL**
 
 

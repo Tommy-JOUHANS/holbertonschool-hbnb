@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="e3a1714c-dee7-4cab-8320-e0128a7cf4a5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/part3/images/diagrame-ERD1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/part3/images/er-diagram-mermaid.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/part3/images/mermaid-diagram-er-reservation.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/part3/images/structure1.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/part3/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/part3/README.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_//wsl.localhost/Ubuntu-24.04/home/tommy/holbertonschool-hbnb" value="3AU9Rk9pRre0JAu2tpysRd8s2pf" />
+    </persistenceIdMap>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="3AU9Rk9pRre0JAu2tpysRd8s2pf" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "//wsl.localhost/Ubuntu-24.04/home/tommy/holbertonschool-hbnb/part3/images",
+    "settings.editor.selected.configurable": "settings.sync"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="\\wsl.localhost\Ubuntu-24.04\home\tommy\holbertonschool-hbnb\part3\images" />
+      <recent name="\\wsl.localhost\Ubuntu-24.04\home\tommy\holbertonschool-hbnb" />
+      <recent name="\\wsl.localhost\Ubuntu-24.04\home\tommy\holbertonschool-hbnb\part2\hbnb" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-7e47963ff851-f0eec537fc84-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.23892.515" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="e3a1714c-dee7-4cab-8320-e0128a7cf4a5" name="Changes" comment="" />
+      <created>1772636275499</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1772636275499</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
