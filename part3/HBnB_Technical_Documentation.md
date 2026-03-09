@@ -472,6 +472,21 @@ curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
 }
 ```
 
+### Test - Add Amenity in place
+
+```bash
+curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"name": "WiFi"}'
+```
+
+**Expected Response:**
+```json
+{
+    "message": "Amenity added to place successfully"
+}
+```
 ---
 
 ## Task 6 - Map Relationships Between Entities
