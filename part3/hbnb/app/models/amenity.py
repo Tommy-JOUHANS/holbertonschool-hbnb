@@ -22,14 +22,13 @@ class Amenity(BaseModel, db.Model):
     # =========================================================================
     # RELATIONS
     # =========================================================================
-    
-    # Many-to-Many: Un équipement peut être lié à plusieurs places
-    places = db.relationship(
-        'Place',
-        secondary='place_amenity',
-        back_populates='amenities',
-        lazy='select'
-    )
+    # 🔹 On supprime la relation Many-to-Many avec Place
+    # places = db.relationship(
+    #     'Place',
+    #     secondary='place_amenity',
+    #     back_populates='amenities',
+    #     lazy='select'
+    # )
     
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
