@@ -535,6 +535,10 @@ erDiagram
     PLACE_AMENITY }o--|| AMENITY : ""
 ```
 
+**Relationship ER diagram** 
+
+![ER Diagram Relationship](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-diagram-relationship.png)
+
 ### Implementation
 
 ```python
@@ -964,7 +968,7 @@ erDiagram
 ```
 **ER diagram generated:**
 
-![ER Mermaid](images/mermaid-er-diagram.png)
+![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-er-diagram.png)
 
 ---
 
