@@ -185,4 +185,6 @@ class PlaceReviews(Resource):
         place = facade.get_place(place_id)
         if not place:
             return {'error': 'Place not found'}, 404
-        return [r.to_dict() for r in place.reviews], 200
+        # ✅ Utiliser facade.get_reviews_by_place() au lieu de place.reviews
+        reviews = facade.get_reviews_by_place(place_id)
+        return [r.to_dict() for r in reviews], 200
