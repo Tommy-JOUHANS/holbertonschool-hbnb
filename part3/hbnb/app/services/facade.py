@@ -147,6 +147,35 @@ class HBnBFacade:
         place.update(update_data)
         return place
     
+    # ✅ NOUVELLE MÉTHODE: DELETE PLACE
+    def delete_place(self, place_id):
+        """
+        Delete a place by ID.
+        
+        Args:
+            place_id (str): The ID of the place to delete
+            
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If place not found
+        """
+        # Récupérer la place
+        place = self.place_repo.get(place_id)
+        
+        # Vérifier si la place existe
+        if not place:
+            raise ValueError("Place not found")
+        
+        # Supprimer les reviews associées à cette place
+        if hasattr(place, 'reviews') and place.reviews:
+            for review in place.reviews[:]:  # Utiliser une copie pour itérer
+                self.review_repo.delete(review.id)
+        
+        # Supprimer la place
+        self.place_repo.delete(place_id)
+    
     # =========================
     # REVIEW
     # =========================
