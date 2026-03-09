@@ -1,5 +1,6 @@
 """
 Amenity model.
+Represents an amenity/service available in a place.
 """
 from datetime import datetime
 import uuid
@@ -9,29 +10,45 @@ from hbnb.app import db
 
 class Amenity(BaseModel, db.Model):
     """Amenity model mapped with SQLAlchemy"""
-    __tablename__ = 'amenities'
+    __tablename__ = "amenities"
     
-    # ✅ UUID pour l'ID (cohérent avec User, Place, Review)
+    # ✅ UUID pour l'ID
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
-    description = db.Column(db.String(500))
+    name = db.Column(db.String(255), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, 
                           onupdate=datetime.utcnow, nullable=False)
     
-    def __init__(self, name, description=None, **kwargs):
+    # =========================================================================
+    # RELATIONS
+    # =========================================================================
+    
+    # Many-to-Many: Un équipement peut être lié à plusieurs places
+    places = db.relationship(
+        'Place',
+        secondary='place_amenity',
+        back_populates='amenities',
+        lazy='select'
+    )
+    
+    def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.name = name
-        self.description = description
     
     def __repr__(self):
         return f'<Amenity {self.name}>'
     
     def to_dict(self):
+        """Convert amenity to dictionary"""
         return {
             'id': self.id,
             'name': self.name,
-            'description': self.description,
             'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') else None,
             'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') else None
         }
+    
+    def update(self, data):
+        """Update amenity attributes"""
+        for key, value in data.items():
+            if hasattr(self, key) and key != 'id':
+                setattr(self, key, value)
