@@ -7,12 +7,10 @@ import uuid
 from hbnb.app.models.base_model import BaseModel
 from hbnb.app import db
 
-
 class Amenity(BaseModel, db.Model):
     """Amenity model mapped with SQLAlchemy"""
     __tablename__ = "amenities"
     
-    # ✅ UUID pour l'ID
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(255), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -22,13 +20,12 @@ class Amenity(BaseModel, db.Model):
     # =========================================================================
     # RELATIONS
     # =========================================================================
-    # 🔹 On supprime la relation Many-to-Many avec Place
-    # places = db.relationship(
-    #     'Place',
-    #     secondary='place_amenity',
-    #     back_populates='amenities',
-    #     lazy='select'
-    # )
+    places = db.relationship(
+        'Place',
+        secondary='place_amenity',
+        back_populates='amenities',
+        lazy='select'
+    )
     
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
@@ -38,7 +35,6 @@ class Amenity(BaseModel, db.Model):
         return f'<Amenity {self.name}>'
     
     def to_dict(self):
-        """Convert amenity to dictionary"""
         return {
             'id': self.id,
             'name': self.name,
@@ -47,7 +43,6 @@ class Amenity(BaseModel, db.Model):
         }
     
     def update(self, data):
-        """Update amenity attributes"""
         for key, value in data.items():
             if hasattr(self, key) and key != 'id':
                 setattr(self, key, value)
