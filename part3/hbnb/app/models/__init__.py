@@ -1,16 +1,33 @@
 """
-Models package initializer.
+Models initialization.
+Initializes all models and associations for the HBnB application.
 """
-from .base_model import BaseModel
-from .user import User
-from .place import Place
-from .review import Review
-from .amenity import Amenity
+
+from hbnb.app import db
+
+# =========================================================================
+# IMPORTANT: Importer dans le bon ordre pour éviter les erreurs
+# =========================================================================
+
+# 1. D'abord importer User et Amenity (sans dépendances circulaires)
+from hbnb.app.models.user import User
+from hbnb.app.models.amenity import Amenity
+
+# 2. Ensuite importer Place (qui utilise place_amenity)
+from hbnb.app.models.place import Place, place_amenity
+
+# 3. Enfin importer Review (qui dépend de User et Place)
+from hbnb.app.models.review import Review
+
+# =========================================================================
+# EXPORTER POUR UTILISATION
+# =========================================================================
 
 __all__ = [
-    "BaseModel",
-    "User",
-    "Place",
-    "Review",
-    "Amenity"
+    'User',
+    'Place',
+    'Review',
+    'Amenity',
+    'place_amenity',
+    'db'
 ]
