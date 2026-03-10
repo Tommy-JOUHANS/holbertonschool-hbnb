@@ -1,4 +1,4 @@
-# HBnb Part 2: Part 3: Enhanced Backend with Authentication and Database Integration
+# HBnb Part 3: Part 3: Enhanced Backend with Authentication and Database Integration
 ### Authors: Tommy Jouhans & James Roussel
 ---
 
@@ -406,9 +406,13 @@ class Place(BaseModel, db.Model):
     price           = db.Column(db.Float, nullable=False)
     latitude        = db.Column(db.Float, nullable=False)
     longitude       = db.Column(db.Float, nullable=False)
-    number_rooms    = db.Column(db.Integer, default=0)
-    number_bathrooms= db.Column(db.Integer, default=0)
-    max_guest       = db.Column(db.Integer, default=0)
+    owner_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'),
+                         nullable=False)
+    amenities_id = db.Column(db.String(36), db.ForeignKey('amenities.id', ondelete='CASCADE'),
+                         nullable=False)
+    reviews_id = db.Column(db.String(36), db.ForeignKey('reviews.id', ondelete='CASCADE'),
+                         nullable=False)
+
 ```
 
 ### Review Model
@@ -503,8 +507,6 @@ erDiagram
         string email
         string password
         boolean is_admin
-        datetime created_at
-        datetime updated_at
     }
 
     PLACE {
@@ -515,8 +517,6 @@ erDiagram
         float latitude
         float longitude
         string owner_id FK
-        datetime created_at
-        datetime updated_at
     }
 
     REVIEW {
@@ -525,15 +525,11 @@ erDiagram
         int rating
         string user_id FK
         string place_id FK
-        datetime created_at
-        datetime updated_at
     }
 
     AMENITY {
         string id PK
         string name
-        datetime created_at
-        datetime updated_at
     }
 
     PLACE_AMENITY {
@@ -549,9 +545,7 @@ erDiagram
     PLACE_AMENITY }o--|| AMENITY : ""
 ```
 
-**Relationship ER diagram** 
 
-![ER Diagram Relationship](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-diagram-relationship.png)
 
 ### Implementation
 
@@ -850,8 +844,6 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Places table
@@ -863,8 +855,6 @@ CREATE TABLE IF NOT EXISTS places (
     latitude FLOAT NOT NULL,
     longitude FLOAT NOT NULL,
     owner_id CHAR(36) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -875,8 +865,6 @@ CREATE TABLE IF NOT EXISTS reviews (
     rating INT CHECK (rating BETWEEN 1 AND 5),
     user_id CHAR(36) NOT NULL,
     place_id CHAR(36) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE,
     UNIQUE (user_id, place_id)
