@@ -924,8 +924,7 @@ erDiagram
         varchar email UK
         varchar password
         boolean is_admin
-        datetime created_at
-        datetime updated_at
+      
     }
 
     PLACE {
@@ -936,8 +935,7 @@ erDiagram
         float latitude
         float longitude
         char(36) owner_id FK
-        datetime created_at
-        datetime updated_at
+        
     }
 
     REVIEW {
@@ -946,15 +944,13 @@ erDiagram
         int rating
         char(36) user_id FK
         char(36) place_id FK
-        datetime created_at
-        datetime updated_at
+    
     }
 
     AMENITY {
         char(36) id PK
         varchar name UK
-        datetime created_at
-        datetime updated_at
+      
     }
 
     PLACE_AMENITY {
