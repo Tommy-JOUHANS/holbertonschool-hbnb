@@ -20,9 +20,9 @@ class Place(BaseModel, db.Model):
     longitude = db.Column(db.Float, nullable=False)
     owner_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'),
                          nullable=False)
-    amenities_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'),
+    amenities_id = db.Column(db.String(36), db.ForeignKey('amenities.id', ondelete='CASCADE'),
                          nullable=False)
-    reviews_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'),
+    reviews_id = db.Column(db.String(36), db.ForeignKey('reviews.id', ondelete='CASCADE'),
                          nullable=False)
     
 
