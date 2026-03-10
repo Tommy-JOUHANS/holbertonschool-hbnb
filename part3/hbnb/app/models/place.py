@@ -20,11 +20,9 @@ class Place(BaseModel, db.Model):
     longitude = db.Column(db.Float, nullable=False)
     owner_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'),
                          nullable=False)
-    amenities_id = db.Column(db.String(36), db.ForeignKey('amenities.id', ondelete='CASCADE'),
-                         nullable=False)
-    reviews_id = db.Column(db.String(36), db.ForeignKey('reviews.id', ondelete='CASCADE'),
-                         nullable=False)
-    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
 
     # =========================================================================
     # RELATIONS
@@ -103,8 +101,8 @@ class Place(BaseModel, db.Model):
             'latitude': self.latitude,
             'longitude': self.longitude,
             'owner_id': self.owner_id,
-            "amenities_id": [a.to_dict() for a in self.amenities],
-            "reviews_id": [r.to_dict() for r in self.reviews]
+            'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') else None,
+            'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') else None
         }
         if include_owner and self.owner:
             data['owner'] = self.owner.to_dict()
@@ -144,3 +142,4 @@ class Place(BaseModel, db.Model):
         for key, value in data.items():
             if hasattr(self, key) and key in allowed_fields:
                 setattr(self, key, value)
+

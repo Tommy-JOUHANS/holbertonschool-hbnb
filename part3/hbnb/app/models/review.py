@@ -19,6 +19,9 @@ class Review(BaseModel, db.Model):
                         nullable=False)
     place_id = db.Column(db.String(36), db.ForeignKey('places.id', ondelete='CASCADE'),
                          nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
 
     # =========================================================================
     # CONTRAINTES
@@ -70,7 +73,7 @@ class Review(BaseModel, db.Model):
         self.place_id = place_id
 
     def __repr__(self):
-        return f'<Review {self.rating} for place {self.place_id}>'
+        return f'<Review {self.rating}★ for place {self.place_id}>'
 
     def to_dict(self, include_user=False, include_place=False):
         data = {
@@ -79,7 +82,8 @@ class Review(BaseModel, db.Model):
             'rating': self.rating,
             'user_id': self.user_id,
             'place_id': self.place_id,
-            
+            'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') else None,
+            'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') else None
         }
         if include_user and self.user:
             data['user'] = self.user.to_dict()

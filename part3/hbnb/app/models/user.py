@@ -20,7 +20,9 @@ class User(BaseModel, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
 
     # =========================================================================
     # RELATIONS
@@ -86,6 +88,8 @@ class User(BaseModel, db.Model):
             'last_name': self.last_name,
             'email': self.email,
             'is_admin': self.is_admin,
+            'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') else None,
+            'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') else None
         }
 
     def verify_password(self, password):
