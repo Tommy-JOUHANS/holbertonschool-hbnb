@@ -837,76 +837,69 @@ curl -X PUT "http://127.0.0.1:5000/api/v1/places/86b561aa-b69a-4b8e-974b-b1b508e
 
 ```sql
 -- Users table
-CREATE TABLE IF NOT EXISTS users (
-    id CHAR(36) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS User (
+    id         CHAR(36) PRIMARY KEY,
     first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    is_admin BOOLEAN DEFAULT FALSE,
+    last_name  VARCHAR(255) NOT NULL,
+    email      VARCHAR(255) UNIQUE NOT NULL,
+    password   VARCHAR(255) NOT NULL,
+    is_admin   BOOLEAN DEFAULT FALSE
 );
 
--- Places table
-CREATE TABLE IF NOT EXISTS places (
-    id CHAR(36) PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS Place (
+    id          CHAR(36) PRIMARY KEY,
+    title       VARCHAR(255) NOT NULL,
     description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    latitude FLOAT NOT NULL,
-    longitude FLOAT NOT NULL,
-    owner_id CHAR(36) NOT NULL,
-    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    price       DECIMAL(10, 2),
+    latitude    FLOAT,
+    longitude   FLOAT,
+    owner_id    CHAR(36) NOT NULL,
+    FOREIGN KEY (owner_id) REFERENCES User(id)
 );
 
--- Reviews table
-CREATE TABLE IF NOT EXISTS reviews (
-    id CHAR(36) PRIMARY KEY,
-    text TEXT NOT NULL,
-    rating INT CHECK (rating BETWEEN 1 AND 5),
-    user_id CHAR(36) NOT NULL,
+CREATE TABLE IF NOT EXISTS Amenity (
+    id   CHAR(36) PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Review (
+    id       CHAR(36) PRIMARY KEY,
+    text     TEXT NOT NULL,
+    rating   INT CHECK (rating BETWEEN 1 AND 5),
+    user_id  CHAR(36) NOT NULL,
     place_id CHAR(36) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)  REFERENCES User(id),
+    FOREIGN KEY (place_id) REFERENCES Place(id),
     UNIQUE (user_id, place_id)
 );
 
--- Amenities table
-CREATE TABLE IF NOT EXISTS amenities (
-    id CHAR(36) PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Place_Amenity association table
-CREATE TABLE IF NOT EXISTS place_amenity (
-    place_id CHAR(36) NOT NULL,
+CREATE TABLE IF NOT EXISTS Place_Amenity (
+    place_id   CHAR(36) NOT NULL,
     amenity_id CHAR(36) NOT NULL,
     PRIMARY KEY (place_id, amenity_id),
-    FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE,
-    FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
+    FOREIGN KEY (place_id)   REFERENCES Place(id),
+    FOREIGN KEY (amenity_id) REFERENCES Amenity(id)
 );
+
 ```
 
 ### Initial Data
 
 ```sql
--- Admin user (password: admin1234 hashed with bcrypt)
-INSERT INTO users (id, first_name, last_name, email, password, is_admin)
+INSERT INTO User (id, first_name, last_name, email, password, is_admin)
 VALUES (
     '36c9050e-ddd3-4c3b-9731-9f487208bbc1',
     'Admin',
     'HBnB',
     'admin@hbnb.io',
-    '$2b$12$...hashed_password...',
+    '$2b$12$izmWKHa56KHJfLxBXhj6R.znnnyy10Crqm.URRuVfRwSe6xsfVlb6',
     TRUE
 );
 
--- Initial Amenities
-INSERT INTO amenities (id, name) VALUES
-    (uuid(), 'WiFi'),
-    (uuid(), 'Swimming Pool'),
-    (uuid(), 'Air Conditioning');
+INSERT INTO Amenity (id, name) VALUES
+    ('90c50757-a3e2-4a14-a744-1b4b59cbfa15', 'WiFi'),
+    ('ed5cd7ba-c1a6-4f07-8d62-68eab173b6e0', 'Piscine'),
+    ('d8870ea5-67cf-4cbf-bd99-940ed7d568f9', 'Climatisation');
 ```
 
 ---
