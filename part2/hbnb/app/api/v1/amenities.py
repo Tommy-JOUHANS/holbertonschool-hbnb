@@ -70,3 +70,4 @@ class AmenityResource(Resource):
             return {"error": "Amenity not found"}, 404
         amenity.update(api.payload)
         return amenity.to_dict(), 200
+    

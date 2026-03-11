@@ -23,4 +23,3 @@ class Amenity(BaseModel):
             "name": self.name,
             "description": self.description
         }
-

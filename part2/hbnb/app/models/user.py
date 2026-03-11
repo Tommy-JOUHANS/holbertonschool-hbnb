@@ -20,6 +20,9 @@ class User(BaseModel):
 
         if not isinstance(last_name, str) or not last_name.strip():
             raise ValueError("Last name is required")
+        
+        if not isinstance(email, str) or not email.strip():
+            raise ValueError("Email is required")
 
         if not isinstance(email, str) or not email.strip():
             raise ValueError("Email is required")

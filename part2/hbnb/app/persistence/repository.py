@@ -60,4 +60,8 @@ class InMemoryRepository(Repository):
         for obj in self.storage.value():
             if getattr(obj, attr_name, None) == attr_value:
                 return obj
+<<<<<<< HEAD
         return None
+=======
+        return None
+>>>>>>> 7a7329e7ec846a3b7dcbf9bccb96d331c3810077
