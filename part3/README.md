@@ -1034,6 +1034,212 @@ erDiagram
 ![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-er-diagram-reservation.png)
 
 
+### Booking Model (SQLAlchemy)
+
+```python
+class Booking(BaseModel, db.Model):
+    __tablename__ = "bookings"
+
+    user_id     = Column(String(36), ForeignKey("users.id",  ondelete="CASCADE"), nullable=False)
+    place_id    = Column(String(36), ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
+    check_in    = Column(Date,    nullable=False)
+    check_out   = Column(Date,    nullable=False)
+    total_price = Column(Numeric(10, 2), nullable=False)
+    status      = Column(Enum("pending", "confirmed", "cancelled"), default="pending")
+
+    # passive_deletes=True: lets the DB ON DELETE CASCADE handle deletion
+    # without SQLAlchemy attempting a SET NULL first
+    user  = relationship("User",  backref=db.backref("bookings",
+                cascade="all, delete-orphan", passive_deletes=True))
+    place = relationship("Place", backref=db.backref("bookings",
+                cascade="all, delete-orphan", passive_deletes=True))
+
+    def nights(self):
+        return (self.check_out - self.check_in).days
+```
+
+### Business Rules
+
+- The owner of a Place **cannot** book their own place
+- Status lifecycle: `pending` → `confirmed` → `cancelled`
+- `total_price = price × nights()`
+- **CASCADE DELETE**: deleting a `User` or `Place` removes all linked `Booking` records
+
+---
+
+## Unit Tests — Full Results
+
+```bash
+export USE_DATABASE=true
+python -m unittest discover -s hbnb/tests -v
+```
+
+```
+Ran 117 tests in ~90s — OK
+```
+
+### test_password_hashing.py — Task 1
+
+| Test | Description | Status |
+|---|---|---|
+| `test_password_is_hashed_on_create` | Password haché à la création via API | ✅ PASS |
+| `test_password_not_in_get_response` | Password absent de la réponse GET | ✅ PASS |
+| `test_wrong_password_returns_401` | Mauvais password → 401 | ✅ PASS |
+| `test_correct_password_login_succeeds` | Bon password → 200 + token | ✅ PASS |
+
+### test_jwt_authentication.py — Task 2
+
+| Test | Description | Status |
+|---|---|---|
+| `test_login_returns_access_token` | Login valide retourne `access_token` | ✅ PASS |
+| `test_login_wrong_password` | Mauvais password → 401 | ✅ PASS |
+| `test_protected_endpoint_without_token` | Endpoint protégé sans token → 401 | ✅ PASS |
+| `test_protected_endpoint_with_valid_token` | Endpoint protégé avec token → 200 | ✅ PASS |
+| `test_token_contains_is_admin_claim` | Token contient claim `is_admin` | ✅ PASS |
+| `test_token_contains_user_id_claim` | Token contient claim `user_id` | ✅ PASS |
+
+### test_rbac.py — Task 8
+
+| Test | Description | Status |
+|---|---|---|
+| `test_admin_can_create_user` | Admin peut créer un user | ✅ PASS |
+| `test_non_admin_cannot_create_user` | Non-admin → 403 | ✅ PASS |
+| `test_admin_can_create_amenity` | Admin peut créer une amenity | ✅ PASS |
+| `test_non_admin_cannot_create_amenity` | Non-admin amenity → 403 | ✅ PASS |
+| `test_user_cannot_modify_email` | User ne peut pas modifier email → 400 | ✅ PASS |
+| `test_admin_can_modify_any_user` | Admin peut modifier n'importe quel user | ✅ PASS |
+
+### test_user_crud.py — Task 4
+
+| Test | Description | Status |
+|---|---|---|
+| `test_create_user` | Création user → 201 | ✅ PASS |
+| `test_get_user_by_id` | Lecture user par ID → 200 | ✅ PASS |
+| `test_update_user` | Mise à jour user → 200 | ✅ PASS |
+| `test_duplicate_email_returns_400` | Email dupliqué → 400 | ✅ PASS |
+| `test_get_nonexistent_user` | User inexistant → 404 | ✅ PASS |
+
+### test_place_crud.py — Task 5 / Task 7
+
+| Test | Description | Status |
+|---|---|---|
+| `test_create_place` | Création place → 201 | ✅ PASS |
+| `test_get_place_by_id` | Lecture place par ID → 200 | ✅ PASS |
+| `test_update_place_by_owner` | Mise à jour par propriétaire → 200 | ✅ PASS |
+| `test_non_owner_cannot_update_place` | Non-propriétaire → 403 | ✅ PASS |
+| `test_place_has_owner_id` | Place contient `owner_id` | ✅ PASS |
+
+### test_amenity_crud.py — Task 5 / Task 8
+
+| Test | Description | Status |
+|---|---|---|
+| `test_admin_create_amenity` | Admin crée une amenity → 201 | ✅ PASS |
+| `test_admin_update_amenity` | Admin met à jour une amenity → 200 | ✅ PASS |
+| `test_get_amenity` | Lecture amenity → 200 | ✅ PASS |
+| `test_list_amenities` | Liste des amenities → 200 | ✅ PASS |
+
+### test_review_crud.py — Task 6 / Task 7
+
+| Test | Description | Status |
+|---|---|---|
+| `test_create_review` | Création review → 201 | ✅ PASS |
+| `test_cannot_review_own_place` | Review de son propre place → 400 | ✅ PASS |
+| `test_cannot_review_twice` | Double review → 400 | ✅ PASS |
+| `test_delete_review` | Suppression review → 200 | ✅ PASS |
+
+### test_entity_relationships.py — Task 6
+
+| Test | Description | Status |
+|---|---|---|
+| `test_place_has_reviews` | Place → Reviews (1→N) | ✅ PASS |
+| `test_place_has_amenities` | Place ↔ Amenities (N→N) | ✅ PASS |
+| `test_review_references_place_and_user` | Review contient `place_id` et `user_id` | ✅ PASS |
+| `test_amenity_in_multiple_places` | Amenity liée à plusieurs Places | ✅ PASS |
+
+### test_sql_schema.py — Task 9
+
+| Test | Description | Status |
+|---|---|---|
+| `test_tables_exist` | Tables users/places/reviews/amenities/place_amenity existent | ✅ PASS |
+| `test_users_columns` | Colonnes table `users` correctes | ✅ PASS |
+| `test_places_columns` | Colonnes table `places` correctes | ✅ PASS |
+| `test_not_null_constraints` | Contraintes NOT NULL respectées | ✅ PASS |
+| `test_cascade_delete_place_amenity` | CASCADE DELETE place → place_amenity | ✅ PASS |
+
+---
+
+### test_rel_user_place.py — Task 6 Bonus
+
+| Test | Description | Status |
+|---|---|---|
+| `test_place_has_owner_id` | `Place.owner_id` référence un User valide | ✅ PASS |
+| `test_owner_id_set_from_jwt_token` | `owner_id` fixé automatiquement depuis le JWT | ✅ PASS |
+| `test_user_owns_multiple_places` | Un User peut posséder N Places (1→N) | ✅ PASS |
+| `test_non_owner_cannot_update_place` | Non-propriétaire ne peut pas modifier → 403 | ✅ PASS |
+| `test_place_list_contains_owner_id` | `GET /places/` retourne `owner_id` | ✅ PASS |
+
+### test_rel_place_reviews.py — Task 6 Bonus
+
+| Test | Description | Status |
+|---|---|---|
+| `test_review_has_place_id_and_user_id` | Review contient les deux FKs | ✅ PASS |
+| `test_place_has_reviews_endpoint` | `GET /places/<id>/reviews` retourne la liste | ✅ PASS |
+| `test_new_place_has_empty_reviews` | Nouveau Place → reviews vide `[]` | ✅ PASS |
+| `test_multiple_users_can_review_same_place` | N Users peuvent reviewer le même Place | ✅ PASS |
+| `test_cascade_delete_place_removes_reviews` | Suppression Place → Reviews supprimés en cascade | ✅ PASS |
+
+### test_rel_place_amenities.py — Task 6 Bonus
+
+| Test | Description | Status |
+|---|---|---|
+| `test_add_amenity_to_place` | Ajout Amenity à un Place → 200 | ✅ PASS |
+| `test_place_amenity_visible_in_get` | Amenity visible dans `GET /amenities` | ✅ PASS |
+| `test_new_place_has_no_amenities` | Nouveau Place → amenities vide `[]` | ✅ PASS |
+| `test_amenity_belongs_to_multiple_places` | Même Amenity liée à N Places (N→N) | ✅ PASS |
+| `test_remove_amenity_from_place` | Suppression lien Place-Amenity | ✅ PASS |
+| `test_cascade_delete_place_removes_place_amenity` | Suppression Place → `place_amenity` CASCADE | ✅ PASS |
+
+### test_booking_creation.py — Bonus Reservation
+
+| Test | Description | Status |
+|---|---|---|
+| `test_create_booking_default_status` | Statut par défaut `pending` | ✅ PASS |
+| `test_booking_user_orm_relationship` | `booking.user` ORM correct | ✅ PASS |
+| `test_booking_place_orm_relationship` | `booking.place` ORM correct | ✅ PASS |
+| `test_booking_persisted_in_db` | Booking persisté et récupérable par ID | ✅ PASS |
+
+### test_booking_one_to_many.py — Bonus Reservation
+
+| Test | Description | Status |
+|---|---|---|
+| `test_user_has_multiple_bookings` | User → N Bookings (1→N) | ✅ PASS |
+| `test_place_has_multiple_bookings` | Place → N Bookings (1→N) | ✅ PASS |
+| `test_user_bookings_backref_works` | `user.bookings` backref ORM | ✅ PASS |
+| `test_place_bookings_backref_works` | `place.bookings` backref ORM | ✅ PASS |
+
+### test_booking_business_rules.py — Bonus Reservation
+
+| Test | Description | Status |
+|---|---|---|
+| `test_owner_cannot_book_own_place` | Propriétaire ne peut pas réserver son Place | ✅ PASS |
+| `test_non_owner_can_book` | Non-propriétaire peut réserver | ✅ PASS |
+| `test_booking_nights_calculation` | `nights()` = check_out − check_in | ✅ PASS |
+| `test_booking_nights_one_night` | `nights()` = 1 pour une nuit | ✅ PASS |
+| `test_status_pending_to_confirmed` | Statut `pending` → `confirmed` | ✅ PASS |
+| `test_status_confirmed_to_cancelled` | Statut `confirmed` → `cancelled` | ✅ PASS |
+| `test_to_dict_has_all_fields` | `to_dict()` contient tous les champs requis | ✅ PASS |
+| `test_to_dict_nights_correct` | `to_dict()['nights']` correct | ✅ PASS |
+
+### test_cascade_delete_*.py — Bonus Reservation
+
+| Test | Description | Status |
+|---|---|---|
+| `test_cascade_delete_user_removes_bookings` | Suppression User → Bookings supprimés | ✅ PASS |
+| `test_cascade_delete_place_removes_bookings` | Suppression Place → Bookings supprimés | ✅ PASS |
+| `test_deleting_user_does_not_delete_place` | Suppression User ne supprime pas le Place | ✅ PASS |
+
+---
+
 ## Setup & Installation
 
 ### Prerequisites
@@ -1041,14 +1247,15 @@ erDiagram
 - Python 3.8+
 - pip
 - virtualenv (recommended)
+- SQLite3 (included with Python)
 
-### Install Dependencies
+### Install
 
 ```bash
 cd part3
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or venv\Scripts\activate on Windows
+source venv/bin/activate        # Linux / Mac
+# or: venv\Scripts\activate     # Windows
 
 pip install -r requirements.txt
 ```
@@ -1056,27 +1263,18 @@ pip install -r requirements.txt
 ### requirements.txt
 
 ```
-flask
-flask-restx
-flask-sqlalchemy
-flask-jwt-extended
-flask-bcrypt
-sqlalchemy
+Flask==3.1.3
+Flask-Bcrypt==1.0.1
+Flask-JWT-Extended==4.7.1
+flask-restx==1.3.2
+sqlalchemy==2.0.48
+flask-sqlalchemy==3.1.1
 ```
 
----
-
-## Running the Application
-
-### InMemory mode (default)
+### Run the Application
 
 ```bash
-python -m hbnb.run
-```
-
-### SQLAlchemy mode (recommended)
-
-```bash
+# SQLAlchemy mode (recommended)
 export USE_DATABASE=true
 python -m hbnb.run
 ```
@@ -1084,52 +1282,32 @@ python -m hbnb.run
 **Expected startup output:**
 ```
 Using SQLAlchemy Repository
-✅ Admin user initialized with ID: <uuid>
- * Serving Flask app 'hbnb.app'
+✅ Admin user already exists
  * Running on http://127.0.0.1:5000
 ```
 
-### Quick test workflow
+### Run the Tests
 
 ```bash
-# 1. Login as admin
-TOKEN=$(curl -s -X POST http://127.0.0.1:5000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+export USE_DATABASE=true
+python -m unittest discover -s hbnb/tests -v
+# → Ran 117 tests in ~90s — OK
+```
 
-# 2. Create a user
-curl -X POST http://127.0.0.1:5000/api/v1/users/ \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"first_name":"John","last_name":"Doe","email":"john@test.com","password":"pass123"}'
+### Inspect the SQLite Database
 
-# 3. List all places (public)
-curl http://127.0.0.1:5000/api/v1/places/
-
-
-# 4. List tables in database:
-
+```bash
 sqlite3 instance/development.db ".tables"
-
-
-# 5. To print the content of each table:
 sqlite3 instance/development.db "SELECT * FROM users;"
 sqlite3 instance/development.db "SELECT * FROM places;"
 sqlite3 instance/development.db "SELECT * FROM amenities;"
 sqlite3 instance/development.db "SELECT * FROM reviews;"
 sqlite3 instance/development.db "SELECT * FROM place_amenity;"
-
 ```
 
-
-
-
-
 ---
+
 ## Authors
 
-- Tommy Jouhans
-
-- James Roussel
-
----
+- **Tommy Jouhans**
+- **James Roussel**
