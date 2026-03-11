@@ -1021,7 +1021,7 @@ erDiagram
     Place ||--o{ Reservation : "receives"
 ```
 
-
+![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-er-diagram-reservation.png)
 
 
 ## Setup & Installation
