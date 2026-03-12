@@ -9,12 +9,12 @@
 - [Task 0 - Application Factory Configuration](#task-0---application-factory-configuration)
 - [Task 1 - Password Hashing with bcrypt](#task-1---password-hashing-with-bcrypt)
 - [Task 2 - JWT Authentication](#task-2---jwt-authentication)
-- [Task 3 - SQLAlchemy Repository](#task-3---sqlalchemy-repository)
-- [Task 4 - Map User Entity](#task-4---map-user-entity)
-- [Task 5 - Map Place, Review, Amenity Entities](#task-5---map-place-review-and-amenity-entities)
-- [Task 6 - Map Relationships Between Entities](#task-6---map-relationships-between-entities)
-- [Task 7 - Authenticated User Access](#task-7---authenticated-user-access)
-- [Task 8 - Administrator Access](#task-8---administrator-access)
+- [Task 3 - Authenticated User Access](#task-3---authenticated-user-access)
+- [Task 4 - Administrator Access](#task-4---administrator-access)
+- [Task 5 - SQLAlchemy Repository](#task-5---sqlalchemy-repository)
+- [Task 6 - Map User Entity](#task-6---map-user-entity)
+- [Task 7 - Map Place, Review, Amenity Entities](#task-7---map-place-review-and-amenity-entities)
+- [Task 8 - Map Relationships Between Entities](#task-8---map-relationships-between-entities)
 - [Task 9 - SQL Scripts](#task-9---sql-scripts)
 - [Task 10 - ER Diagram](#task-10---er-diagram)
 - [Setup & Installation](#setup--installation)
@@ -267,7 +267,172 @@ curl -X GET "http://127.0.0.1:5000/api/v1/users/" \
 
 ---
 
-## Task 3 - SQLAlchemy Repository
+## Task 3 - Authenticated User Access
+
+**Objective:** Secure endpoints with JWT, add ownership validation.
+
+### Protected Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/places/` | Create a place (authenticated) |
+| PUT | `/api/v1/places/<id>` | Update own place only |
+| POST | `/api/v1/reviews/` | Create review (not own place, once per place) |
+| PUT | `/api/v1/reviews/<id>` | Update own review only |
+| DELETE | `/api/v1/reviews/<id>` | Delete own review only |
+| PUT | `/api/v1/users/<id>` | Update own profile (no email/password) |
+
+### Public Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/places/` | List all places |
+| GET | `/api/v1/places/<id>` | Get place details |
+
+### Test - Unauthorized Place Update
+
+```bash
+curl -X PUT "http://127.0.0.1:5000/api/v1/places/86b561aa-b69a-4b8e-974b-b1b508e8aa35" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <other_user_token>" \
+  -d '{"title": "Hacked title"}'
+```
+
+**Expected Response:**
+```json
+{
+    "error": "Unauthorized action"
+}
+```
+
+### Test - Update Own Review
+
+```bash
+curl -X PUT "http://127.0.0.1:5000/api/v1/reviews/7d5a9f01-f662-4d30-9d63-97c6e775d612" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{"text": "Updated review", "rating": 4}'
+```
+
+### Test - Public Places (no token needed)
+
+```bash
+curl -X GET "http://127.0.0.1:5000/api/v1/places/"
+```
+
+**Expected Response:**
+```json
+[
+    {
+        "id": "86b561aa-b69a-4b8e-974b-b1b508e8aa35",
+        "title": "Maison de John",
+        "price": 80.0
+    }
+]
+```
+
+### Test - Modify Own User Info (no email/password)
+
+```bash
+curl -X PUT "http://127.0.0.1:5000/api/v1/users/3597e65d-068e-43ae-8229-b011d4cb532e" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <john_token>" \
+  -d '{"first_name": "Johnny"}'
+```
+
+### Test - Try to Modify Email (blocked)
+
+```bash
+curl -X PUT "http://127.0.0.1:5000/api/v1/users/3597e65d-068e-43ae-8229-b011d4cb532e" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <john_token>" \
+  -d '{"email": "newemail@test.com"}'
+```
+
+**Expected Response:**
+```json
+{
+    "error": "You cannot modify email or password"
+}
+```
+
+---
+
+## Task 4 - Administrator Access
+
+**Objective:** Allow admins to bypass ownership restrictions and manage all resources.
+
+### Admin-Only Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/users/` | Create any user |
+| PUT | `/api/v1/users/<id>` | Modify any user (incl. email/password) |
+| POST | `/api/v1/amenities/` | Create amenity |
+| PUT | `/api/v1/amenities/<id>` | Modify amenity |
+
+### RBAC Check Pattern
+
+```python
+from flask_jwt_extended import get_jwt
+
+@api.route('/<amenity_id>')
+class AmenityResource(Resource):
+    @jwt_required()
+    def put(self, amenity_id):
+        current_user = get_jwt()
+        if not current_user.get('is_admin'):
+            return {'error': 'Admin privileges required'}, 403
+        # update logic...
+```
+
+### Test - Create User as Admin
+
+```bash
+curl -X POST "http://127.0.0.1:5000/api/v1/users/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{"first_name": "Jane", "last_name": "Smith", "email": "jane@test.com", "password": "pass123"}'
+```
+
+### Test - Add Amenity as Admin
+
+```bash
+curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{"name": "Swimming Pool"}'
+```
+
+### Test - Non-admin Tries to Create Amenity
+
+```bash
+curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <john_token>" \
+  -d '{"name": "Sauna"}'
+```
+
+**Expected Response:**
+```json
+{
+    "error": "Admin privileges required"
+}
+```
+
+### Test - Admin Modifies Another User's Place
+
+```bash
+curl -X PUT "http://127.0.0.1:5000/api/v1/places/86b561aa-b69a-4b8e-974b-b1b508e8aa35" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{"title": "Admin Updated Title"}'
+```
+
+
+---
+
+## Task 5 - SQLAlchemy Repository
 
 **Objective:** Replace the in-memory repository with a SQLAlchemy-based repository.
 
@@ -334,9 +499,11 @@ else:
     print("Using InMemory Repository")
 ```
 
+
+
 ---
 
-## Task 4 - Map User Entity
+## Task 6 - Map User Entity
 
 **Objective:** Map the User entity to a SQLAlchemy model.
 
@@ -370,17 +537,6 @@ class User(BaseModel, db.Model):
     is_admin   = db.Column(db.Boolean, default=False)
 ```
 
-### Initialize Database
-
-```bash
-export USE_DATABASE=true
-export FLASK_APP=hbnb.app
-flask shell
->>> from hbnb.app import db
->>> from hbnb.app.models import User, Place, Review, Amenity
->>> db.create_all()
->>> exit()
-```
 
 ### Test - Create User
 
@@ -401,7 +557,7 @@ curl -X POST "http://127.0.0.1:5000/api/v1/users/" \
 
 ---
 
-## Task 5 - Map Place, Review, and Amenity Entities
+## Task 7 - Map Place, Review, and Amenity Entities
 
 **Objective:** Map the remaining entities to SQLAlchemy models.
 
@@ -502,7 +658,19 @@ curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
 ```
 ---
 
-## Task 6 - Map Relationships Between Entities
+### Initialize Database
+
+```bash
+export USE_DATABASE=true
+export FLASK_APP=hbnb.app
+flask shell
+>>> from hbnb.app import db
+>>> from hbnb.app.models import User, Place, Review, Amenity
+>>> db.create_all()
+>>> exit()
+```
+
+## Task 8 - Map Relationships Between Entities
 
 **Objective:** Define one-to-many and many-to-many relationships using SQLAlchemy.
 
@@ -555,6 +723,7 @@ erDiagram
     PLACE_AMENITY }o--|| AMENITY : ""
 ```
 
+![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/relationship-diagram.png)
 
 
 ### Implementation
@@ -675,177 +844,18 @@ curl -X POST "http://127.0.0.1:5000/api/v1/reviews/" \
 
 ---
 
-## Task 7 - Authenticated User Access
 
-**Objective:** Secure endpoints with JWT, add ownership validation.
 
-### Protected Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/places/` | Create a place (authenticated) |
-| PUT | `/api/v1/places/<id>` | Update own place only |
-| POST | `/api/v1/reviews/` | Create review (not own place, once per place) |
-| PUT | `/api/v1/reviews/<id>` | Update own review only |
-| DELETE | `/api/v1/reviews/<id>` | Delete own review only |
-| PUT | `/api/v1/users/<id>` | Update own profile (no email/password) |
-
-### Public Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/places/` | List all places |
-| GET | `/api/v1/places/<id>` | Get place details |
-
-### Test - Unauthorized Place Update
-
-```bash
-curl -X PUT "http://127.0.0.1:5000/api/v1/places/86b561aa-b69a-4b8e-974b-b1b508e8aa35" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <other_user_token>" \
-  -d '{"title": "Hacked title"}'
-```
-
-**Expected Response:**
-```json
-{
-    "error": "Unauthorized action"
-}
-```
-
-### Test - Update Own Review
-
-```bash
-curl -X PUT "http://127.0.0.1:5000/api/v1/reviews/7d5a9f01-f662-4d30-9d63-97c6e775d612" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin_token>" \
-  -d '{"text": "Updated review", "rating": 4}'
-```
-
-### Test - Public Places (no token needed)
-
-```bash
-curl -X GET "http://127.0.0.1:5000/api/v1/places/"
-```
-
-**Expected Response:**
-```json
-[
-    {
-        "id": "86b561aa-b69a-4b8e-974b-b1b508e8aa35",
-        "title": "Maison de John",
-        "price": 80.0
-    }
-]
-```
-
-### Test - Modify Own User Info (no email/password)
-
-```bash
-curl -X PUT "http://127.0.0.1:5000/api/v1/users/3597e65d-068e-43ae-8229-b011d4cb532e" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <john_token>" \
-  -d '{"first_name": "Johnny"}'
-```
-
-### Test - Try to Modify Email (blocked)
-
-```bash
-curl -X PUT "http://127.0.0.1:5000/api/v1/users/3597e65d-068e-43ae-8229-b011d4cb532e" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <john_token>" \
-  -d '{"email": "newemail@test.com"}'
-```
-
-**Expected Response:**
-```json
-{
-    "error": "You cannot modify email or password"
-}
-```
-
----
-
-## Task 8 - Administrator Access
-
-**Objective:** Allow admins to bypass ownership restrictions and manage all resources.
-
-### Admin-Only Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/users/` | Create any user |
-| PUT | `/api/v1/users/<id>` | Modify any user (incl. email/password) |
-| POST | `/api/v1/amenities/` | Create amenity |
-| PUT | `/api/v1/amenities/<id>` | Modify amenity |
-
-### RBAC Check Pattern
-
-```python
-from flask_jwt_extended import get_jwt
-
-@api.route('/<amenity_id>')
-class AmenityResource(Resource):
-    @jwt_required()
-    def put(self, amenity_id):
-        current_user = get_jwt()
-        if not current_user.get('is_admin'):
-            return {'error': 'Admin privileges required'}, 403
-        # update logic...
-```
-
-### Test - Create User as Admin
-
-```bash
-curl -X POST "http://127.0.0.1:5000/api/v1/users/" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin_token>" \
-  -d '{"first_name": "Jane", "last_name": "Smith", "email": "jane@test.com", "password": "pass123"}'
-```
-
-### Test - Add Amenity as Admin
-
-```bash
-curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin_token>" \
-  -d '{"name": "Swimming Pool"}'
-```
-
-### Test - Non-admin Tries to Create Amenity
-
-```bash
-curl -X POST "http://127.0.0.1:5000/api/v1/amenities/" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <john_token>" \
-  -d '{"name": "Sauna"}'
-```
-
-**Expected Response:**
-```json
-{
-    "error": "Admin privileges required"
-}
-```
-
-### Test - Admin Modifies Another User's Place
-
-```bash
-curl -X PUT "http://127.0.0.1:5000/api/v1/places/86b561aa-b69a-4b8e-974b-b1b508e8aa35" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <admin_token>" \
-  -d '{"title": "Admin Updated Title"}'
-```
-
----
 
 ## Task 9 - SQL Scripts
 
 **Objective:** Generate SQL scripts for table creation and initial data.
 
-### Table Creation
+### Table Creation - schema.sql 
 
 ```sql
+
 CREATE TABLE IF NOT EXISTS users (
     id         CHAR(36) PRIMARY KEY,
     first_name VARCHAR(255) NOT NULL,
@@ -1058,6 +1068,8 @@ class Booking(BaseModel, db.Model):
         return (self.check_out - self.check_in).days
 ```
 
+
+
 ### Business Rules
 
 - The owner of a Place **cannot** book their own place
@@ -1082,70 +1094,71 @@ Ran 117 tests in ~90s — OK
 
 | Test | Description | Status |
 |---|---|---|
-| `test_password_is_hashed_on_create` | Password haché à la création via API | ✅ PASS |
-| `test_password_not_in_get_response` | Password absent de la réponse GET | ✅ PASS |
-| `test_wrong_password_returns_401` | Mauvais password → 401 | ✅ PASS |
-| `test_correct_password_login_succeeds` | Bon password → 200 + token | ✅ PASS |
+| `test_password_is_hashed_on_create` | Password hashed on creation via API | ✅ PASS |
+| `test_password_not_in_get_response` | Password missing from the GET response | ✅ PASS |
+| `test_wrong_password_returns_401` | Wrong password → 401 | ✅ PASS |
+| `test_correct_password_login_succeeds` | Correct password → 200 + token | ✅ PASS |
 
 ### test_jwt_authentication.py — Task 2
 
 | Test | Description | Status |
 |---|---|---|
-| `test_login_returns_access_token` | Login valide retourne `access_token` | ✅ PASS |
-| `test_login_wrong_password` | Mauvais password → 401 | ✅ PASS |
-| `test_protected_endpoint_without_token` | Endpoint protégé sans token → 401 | ✅ PASS |
-| `test_protected_endpoint_with_valid_token` | Endpoint protégé avec token → 200 | ✅ PASS |
-| `test_token_contains_is_admin_claim` | Token contient claim `is_admin` | ✅ PASS |
-| `test_token_contains_user_id_claim` | Token contient claim `user_id` | ✅ PASS |
+| `test_login_returns_access_token` | Valid login returns `access_token` | ✅ PASS |
+| `test_login_wrong_password` | Valid login returns → 401 | ✅ PASS |
+| `test_protected_endpoint_without_token` | Token-free protected endpoint → 401 | ✅ PASS |
+| `test_protected_endpoint_with_valid_token` | Endpoint protected with token → 200 | ✅ PASS |
+| `test_token_contains_is_admin_claim` | Token contains claim `is_admin` | ✅ PASS |
+| `test_token_contains_user_id_claim` | Token contains claim `user_id` | ✅ PASS |
 
 ### test_rbac.py — Task 8
 
 | Test | Description | Status |
 |---|---|---|
-| `test_admin_can_create_user` | Admin peut créer un user | ✅ PASS |
+| `test_admin_can_create_user` | Admin can create a user | ✅ PASS |
 | `test_non_admin_cannot_create_user` | Non-admin → 403 | ✅ PASS |
-| `test_admin_can_create_amenity` | Admin peut créer une amenity | ✅ PASS |
+| `test_admin_can_create_amenity` | Admin can create an amenity | ✅ PASS |
 | `test_non_admin_cannot_create_amenity` | Non-admin amenity → 403 | ✅ PASS |
-| `test_user_cannot_modify_email` | User ne peut pas modifier email → 400 | ✅ PASS |
-| `test_admin_can_modify_any_user` | Admin peut modifier n'importe quel user | ✅ PASS |
+| `test_user_cannot_modify_email` | User cannot change email → 400 | ✅ PASS |
+| `test_admin_can_modify_any_user` | Admin can modify any user | ✅ PASS |
 
 ### test_user_crud.py — Task 4
 
 | Test | Description | Status |
 |---|---|---|
-| `test_create_user` | Création user → 201 | ✅ PASS |
-| `test_get_user_by_id` | Lecture user par ID → 200 | ✅ PASS |
-| `test_update_user` | Mise à jour user → 200 | ✅ PASS |
-| `test_duplicate_email_returns_400` | Email dupliqué → 400 | ✅ PASS |
-| `test_get_nonexistent_user` | User inexistant → 404 | ✅ PASS |
+| `test_create_user` | User creation → 201 | ✅ PASS |
+| `test_get_user_by_id` | User reading by ID → 200 | ✅ PASS |
+| `test_update_user` | Update user → 200 | ✅ PASS |
+| `test_duplicate_email_returns_400` | Duplicate email → 400 | ✅ PASS |
+| `test_get_nonexistent_user` | User does not exist → 404 | ✅ PASS |
 
 ### test_place_crud.py — Task 5 / Task 7
 
 | Test | Description | Status |
 |---|---|---|
-| `test_create_place` | Création place → 201 | ✅ PASS |
-| `test_get_place_by_id` | Lecture place par ID → 200 | ✅ PASS |
-| `test_update_place_by_owner` | Mise à jour par propriétaire → 200 | ✅ PASS |
-| `test_non_owner_cannot_update_place` | Non-propriétaire → 403 | ✅ PASS |
-| `test_place_has_owner_id` | Place contient `owner_id` | ✅ PASS |
+| `test_create_place` | Create place → 201 | ✅ PASS |
+| `test_get_place_by_id` | Reading location by ID → 200 | ✅ PASS |
+| `test_update_place_by_owner` | Updated by owner → 200| ✅ PASS |
+| `test_non_owner_cannot_update_place` | Non-owner → 403| ✅ PASS |
+| `test_place_has_owner_id` | Place contains `owner_id` | ✅ PASS |
 
 ### test_amenity_crud.py — Task 5 / Task 8
 
 | Test | Description | Status |
 |---|---|---|
-| `test_admin_create_amenity` | Admin crée une amenity → 201 | ✅ PASS |
-| `test_admin_update_amenity` | Admin met à jour une amenity → 200 | ✅ PASS |
+| `test_admin_create_amenity` | Admin creates an amenity → 201 | ✅ PASS |
+| `test_admin_update_amenity` | Admin updates an amenity → 200 | ✅ PASS |
 | `test_get_amenity` | Lecture amenity → 200 | ✅ PASS |
-| `test_list_amenities` | Liste des amenities → 200 | ✅ PASS |
+| `test_list_amenities` | List des amenities → 200 | ✅ PASS |
 
 ### test_review_crud.py — Task 6 / Task 7
 
 | Test | Description | Status |
 |---|---|---|
-| `test_create_review` | Création review → 201 | ✅ PASS |
-| `test_cannot_review_own_place` | Review de son propre place → 400 | ✅ PASS |
+| `test_create_review` | Create review → 201 | ✅ PASS |
+| `test_cannot_review_own_place` | Review of one's own place → 400 | ✅ PASS |
 | `test_cannot_review_twice` | Double review → 400 | ✅ PASS |
-| `test_delete_review` | Suppression review → 200 | ✅ PASS |
+| `test_delete_review` | Delete review → 200 | ✅ PASS |
+
 
 ### test_entity_relationships.py — Task 6
 
@@ -1153,17 +1166,18 @@ Ran 117 tests in ~90s — OK
 |---|---|---|
 | `test_place_has_reviews` | Place → Reviews (1→N) | ✅ PASS |
 | `test_place_has_amenities` | Place ↔ Amenities (N→N) | ✅ PASS |
-| `test_review_references_place_and_user` | Review contient `place_id` et `user_id` | ✅ PASS |
-| `test_amenity_in_multiple_places` | Amenity liée à plusieurs Places | ✅ PASS |
+| `test_review_references_place_and_user` | Review contains `place_id` and `user_id` | ✅ PASS |
+| `test_amenity_in_multiple_places` | Amenity linked to several locations | ✅ PASS |
+
 
 ### test_sql_schema.py — Task 9
 
 | Test | Description | Status |
 |---|---|---|
 | `test_tables_exist` | Tables users/places/reviews/amenities/place_amenity existent | ✅ PASS |
-| `test_users_columns` | Colonnes table `users` correctes | ✅ PASS |
-| `test_places_columns` | Colonnes table `places` correctes | ✅ PASS |
-| `test_not_null_constraints` | Contraintes NOT NULL respectées | ✅ PASS |
+| `test_users_columns` | Columns table `users` corrected | ✅ PASS |
+| `test_places_columns` | Columns table `places` corrected | ✅ PASS |
+| `test_not_null_constraints` | Constraints NOT NULL respected | ✅ PASS |
 | `test_cascade_delete_place_amenity` | CASCADE DELETE place → place_amenity | ✅ PASS |
 
 ---
@@ -1172,41 +1186,41 @@ Ran 117 tests in ~90s — OK
 
 | Test | Description | Status |
 |---|---|---|
-| `test_place_has_owner_id` | `Place.owner_id` référence un User valide | ✅ PASS |
-| `test_owner_id_set_from_jwt_token` | `owner_id` fixé automatiquement depuis le JWT | ✅ PASS |
-| `test_user_owns_multiple_places` | Un User peut posséder N Places (1→N) | ✅ PASS |
-| `test_non_owner_cannot_update_place` | Non-propriétaire ne peut pas modifier → 403 | ✅ PASS |
-| `test_place_list_contains_owner_id` | `GET /places/` retourne `owner_id` | ✅ PASS |
+| `test_place_has_owner_id` | `Place.owner_id` reference a User valid | ✅ PASS |
+| `test_owner_id_set_from_jwt_token` | `owner_id` automatically set from the JWT | ✅ PASS |
+| `test_user_owns_multiple_places` | A User can own N Places (1→N) | ✅ PASS |
+| `test_non_owner_cannot_update_place` | Non-owners cannot modify → 403 | ✅ PASS |
+| `test_place_list_contains_owner_id` | `GET /places/` return `owner_id` | ✅ PASS |
 
 ### test_rel_place_reviews.py — Task 6 Bonus
 
 | Test | Description | Status |
 |---|---|---|
-| `test_review_has_place_id_and_user_id` | Review contient les deux FKs | ✅ PASS |
-| `test_place_has_reviews_endpoint` | `GET /places/<id>/reviews` retourne la liste | ✅ PASS |
-| `test_new_place_has_empty_reviews` | Nouveau Place → reviews vide `[]` | ✅ PASS |
-| `test_multiple_users_can_review_same_place` | N Users peuvent reviewer le même Place | ✅ PASS |
-| `test_cascade_delete_place_removes_reviews` | Suppression Place → Reviews supprimés en cascade | ✅ PASS |
+| `test_review_has_place_id_and_user_id` | Review contains both FKs | ✅ PASS |
+| `test_place_has_reviews_endpoint` | `GET /places/<id>/reviews` returns the list | ✅ PASS |
+| `test_new_place_has_empty_reviews` | New Place → reviews empty `[]` | ✅ PASS |
+| `test_multiple_users_can_review_same_place` | New Users can review the same place | ✅ PASS |
+| `test_cascade_delete_place_removes_reviews` | Delete Place → Reviews deleted in masse | ✅ PASS |
 
 ### test_rel_place_amenities.py — Task 6 Bonus
 
 | Test | Description | Status |
 |---|---|---|
-| `test_add_amenity_to_place` | Ajout Amenity à un Place → 200 | ✅ PASS |
-| `test_place_amenity_visible_in_get` | Amenity visible dans `GET /amenities` | ✅ PASS |
-| `test_new_place_has_no_amenities` | Nouveau Place → amenities vide `[]` | ✅ PASS |
-| `test_amenity_belongs_to_multiple_places` | Même Amenity liée à N Places (N→N) | ✅ PASS |
-| `test_remove_amenity_from_place` | Suppression lien Place-Amenity | ✅ PASS |
-| `test_cascade_delete_place_removes_place_amenity` | Suppression Place → `place_amenity` CASCADE | ✅ PASS |
+| `test_add_amenity_to_place` |  Adding Amenity to a Place → 200 | ✅ PASS |
+| `test_place_amenity_visible_in_get` | Amenity visible in `GET /amenities` | ✅ PASS |
+| `test_new_place_has_no_amenities` | New Place → amenities vide `[]` | ✅ PASS |
+| `test_amenity_belongs_to_multiple_places` | Same Amenity linked to N Places (N→N) | ✅ PASS |
+| `test_remove_amenity_from_place` | Remove Place-Amenity link | ✅ PASS |
+| `test_cascade_delete_place_removes_place_amenity` | Delete Place → `place_amenity` CASCADE | ✅ PASS |
 
 ### test_booking_creation.py — Bonus Reservation
 
 | Test | Description | Status |
 |---|---|---|
-| `test_create_booking_default_status` | Statut par défaut `pending` | ✅ PASS |
+| `test_create_booking_default_status` | Default status `pending` | ✅ PASS |
 | `test_booking_user_orm_relationship` | `booking.user` ORM correct | ✅ PASS |
 | `test_booking_place_orm_relationship` | `booking.place` ORM correct | ✅ PASS |
-| `test_booking_persisted_in_db` | Booking persisté et récupérable par ID | ✅ PASS |
+| `test_booking_persisted_in_db` | Booking persisted and recoverable via ID | ✅ PASS |
 
 ### test_booking_one_to_many.py — Bonus Reservation
 
@@ -1221,22 +1235,22 @@ Ran 117 tests in ~90s — OK
 
 | Test | Description | Status |
 |---|---|---|
-| `test_owner_cannot_book_own_place` | Propriétaire ne peut pas réserver son Place | ✅ PASS |
-| `test_non_owner_can_book` | Non-propriétaire peut réserver | ✅ PASS |
+| `test_owner_cannot_book_own_place` | Owner cannot reserve their space | ✅ PASS |
+| `test_non_owner_can_book` | Non-owners can book | ✅ PASS |
 | `test_booking_nights_calculation` | `nights()` = check_out − check_in | ✅ PASS |
-| `test_booking_nights_one_night` | `nights()` = 1 pour une nuit | ✅ PASS |
-| `test_status_pending_to_confirmed` | Statut `pending` → `confirmed` | ✅ PASS |
-| `test_status_confirmed_to_cancelled` | Statut `confirmed` → `cancelled` | ✅ PASS |
-| `test_to_dict_has_all_fields` | `to_dict()` contient tous les champs requis | ✅ PASS |
+| `test_booking_nights_one_night` | `nights()` = 1 for one night| ✅ PASS |
+| `test_status_pending_to_confirmed` | Status `pending` → `confirmed` | ✅ PASS |
+| `test_status_confirmed_to_cancelled` | Status `confirmed` → `cancelled` | ✅ PASS |
+| `test_to_dict_has_all_fields` | `to_dict()` contains all required fields | ✅ PASS |
 | `test_to_dict_nights_correct` | `to_dict()['nights']` correct | ✅ PASS |
 
 ### test_cascade_delete_*.py — Bonus Reservation
 
 | Test | Description | Status |
 |---|---|---|
-| `test_cascade_delete_user_removes_bookings` | Suppression User → Bookings supprimés | ✅ PASS |
-| `test_cascade_delete_place_removes_bookings` | Suppression Place → Bookings supprimés | ✅ PASS |
-| `test_deleting_user_does_not_delete_place` | Suppression User ne supprime pas le Place | ✅ PASS |
+| `test_cascade_delete_user_removes_bookings` | User deletion → Bookings deleted | ✅ PASS |
+| `test_cascade_delete_place_removes_bookings` | Place removed → Bookings deleted | ✅ PASS |
+| `test_deleting_user_does_not_delete_place` | User deletion does not delete the Place | ✅ PASS |
 
 ---
 
