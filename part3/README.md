@@ -68,6 +68,114 @@ part3/
 
 ---
 
+## UML Diagrams
+
+### Package Diagram (Task 0)
+
+This diagram shows:
+- the three architectural layers,
+- the direction of data flow,
+- the central position of the Facade.
+
+![HBNB UML Task 0](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/task0.png)
+
+---
+
+### Class Diagram (Task 1)
+
+![HBNB UML Task 1](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/task1.png)
+
+#### Main Entities
+
+##### BaseModel
+Attributes:
+- id_basemodel : UUID
+- created_at : DateTime
+- updated_at : DateTime
+
+Responsibilities:
+- providing common attributes and methods for all entities,
+- ensuring consistent data management.
+
+##### User
+Attributes:
+- first_name : String
+- last_name : String
+- email : String
+- _password : String
+- is_admin : Boolean
+
+Methods:
+- register()
+- update_profile()
+
+
+Responsibilities:
+- user profile management,
+- authentication,
+- publishing reviews.
+
+---
+
+##### Place
+Attributes:
+- title : String
+- description: String
+- price : Float
+- latitude : Float
+- longitude : Float
+
+Methods:
+- update_place()
+
+Responsibilities:
+- managing property information,
+- associating amenities,
+- receiving reviews.
+
+---
+
+##### Review
+Attributes:
+- comment : String 
+- rating : Float 
+
+Methods:
+- update_comment()
+- update_rating()
+- delete_review()
+
+Responsibilities:
+- creating and managing reviews,
+- contributing to a property’s average rating.
+
+---
+
+##### Amenity
+Attributes:
+- name : String
+- description : String
+
+Responsibilities:
+- managing the amenities catalog,
+- associating amenities with properties.
+
+---
+
+#### Entity Relationships
+
+- A **User** can owns multiple **Place** entities (1:N)
+- A **Place** can have multiple **Review** entities (1:N)
+- A **User** can write multiple **Review** entities (1:N)
+- A **Place** can have multiple **Amenity** entities (N:N via a junction table)
+
+---
+
+
+
+
+---
+
 ## Task 0 - Application Factory Configuration
 
 **Objective:** Update the Flask Application Factory to accept a configuration object.
