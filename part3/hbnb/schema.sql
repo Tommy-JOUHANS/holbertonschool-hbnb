@@ -34,10 +34,10 @@ CREATE TABLE IF NOT EXISTS reviews (
     UNIQUE (user_id, place_id)
 );
 
-CREATE TABLE IF NOT EXISTS place_amenity (
-    place_id   CHAR(36) NOT NULL,
-    amenity_id CHAR(36) NOT NULL,
+CREATE TABLE place_amenity (
+    place_id   VARCHAR(36) NOT NULL,
+    amenity_id VARCHAR(36) NOT NULL,
     PRIMARY KEY (place_id, amenity_id),
-    FOREIGN KEY (place_id)   REFERENCES Place(id),
-    FOREIGN KEY (amenity_id) REFERENCES Amenity(id)
+    FOREIGN KEY (place_id)   REFERENCES places(id)   ON DELETE CASCADE,
+    FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
 );
