@@ -892,13 +892,14 @@ CREATE TABLE IF NOT EXISTS reviews (
     UNIQUE (user_id, place_id)
 );
 
-CREATE TABLE IF NOT EXISTS place_amenity (
-    place_id   CHAR(36) NOT NULL,
-    amenity_id CHAR(36) NOT NULL,
+CREATE TABLE place_amenity (
+    place_id   VARCHAR(36) NOT NULL,
+    amenity_id VARCHAR(36) NOT NULL,
     PRIMARY KEY (place_id, amenity_id),
-    FOREIGN KEY (place_id)   REFERENCES Place(id),
-    FOREIGN KEY (amenity_id) REFERENCES Amenity(id)
+    FOREIGN KEY (place_id)   REFERENCES places(id)   ON DELETE CASCADE,
+    FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
 );
+
 
 
 ```
@@ -1086,8 +1087,360 @@ export USE_DATABASE=true
 python -m unittest discover -s hbnb/tests -v
 ```
 
-```
-Ran 117 tests in ~90s — OK
+*Results of unit tests:*
+
+```bash
+(venv) tommy@TommyJOUHANSPRO:~/holbertonschool-hbnb/part3$ python -m unittest discover -s hbnb/tests -v
+test_create_amenity_invalid (test_amenities.TestAmenityEndpoints.test_create_amenity_invalid)
+Empty name should return 400. ... Using SQLAlchemy Repository
+✅ Admin user already exists
+/home/tommy/holbertonschool-hbnb/part3/hbnb/app/models/base_model.py:39: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  self.created_at = datetime.utcnow()
+/home/tommy/holbertonschool-hbnb/part3/hbnb/app/models/base_model.py:41: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  self.updated_at = datetime.utcnow()
+ok
+test_create_amenity_no_token (test_amenities.TestAmenityEndpoints.test_create_amenity_no_token)
+Without token should return 401. ... ✅ Admin user already exists
+ok
+test_create_amenity_non_admin (test_amenities.TestAmenityEndpoints.test_create_amenity_non_admin)
+Non-admin user should get 403. ... ✅ Admin user already exists
+ok
+test_create_amenity_valid (test_amenities.TestAmenityEndpoints.test_create_amenity_valid)
+Admin can create an amenity. ... ✅ Admin user already exists
+ok
+test_get_amenities (test_amenities.TestAmenityEndpoints.test_get_amenities)
+GET /amenities/ is public and returns 200. ... ✅ Admin user already exists
+ok
+test_amenity_not_found (test_amenity_crud.TestAmenityCRUD.test_amenity_not_found)
+GET /amenities/<fake-id> → 404. ... ✅ Admin user already exists
+ok
+test_create_amenity (test_amenity_crud.TestAmenityCRUD.test_create_amenity)
+Admin creates amenity → 201. ... ✅ Admin user already exists
+ok
+test_create_amenity_no_token (test_amenity_crud.TestAmenityCRUD.test_create_amenity_no_token)
+No token → 401. ... ✅ Admin user already exists
+ok
+test_get_all_amenities (test_amenity_crud.TestAmenityCRUD.test_get_all_amenities)
+GET /amenities/ returns a list. ... ✅ Admin user already exists
+ok
+test_get_amenity (test_amenity_crud.TestAmenityCRUD.test_get_amenity)
+GET /amenities/<id> returns correct amenity. ... ✅ Admin user already exists
+ok
+test_non_admin_cannot_create_amenity (test_amenity_crud.TestAmenityCRUD.test_non_admin_cannot_create_amenity)
+Non-admin cannot create amenity → 403. ... ✅ Admin user already exists
+ok
+test_update_amenity (test_amenity_crud.TestAmenityCRUD.test_update_amenity)
+Admin updates amenity → 200. ... ✅ Admin user already exists
+/home/tommy/holbertonschool-hbnb/part3/hbnb/app/models/base_model.py:45: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  self.updated_at = datetime.utcnow()
+ok
+test_admin_token_has_admin_access (test_auth.TestAuth.test_admin_token_has_admin_access)
+Admin token can create amenities. ... ✅ Admin user already exists
+ok
+test_invalid_token_rejected (test_auth.TestAuth.test_invalid_token_rejected)
+Fake token on a JWT-protected route should return 401/422. ... ✅ Admin user already exists
+ok
+test_login_missing_password (test_auth.TestAuth.test_login_missing_password)
+Missing password field should return 400 (validation error). ... ✅ Admin user already exists
+ok
+test_login_unknown_email (test_auth.TestAuth.test_login_unknown_email)
+Unknown email should return 401. ... ✅ Admin user already exists
+ok
+test_login_valid (test_auth.TestAuth.test_login_valid)
+Valid credentials return a JWT token. ... ✅ Admin user already exists
+ok
+test_login_wrong_password (test_auth.TestAuth.test_login_wrong_password)
+Wrong password should return 401. ... ✅ Admin user already exists
+ok
+test_normal_user_token_denied_admin_route (test_auth.TestAuth.test_normal_user_token_denied_admin_route)
+Normal user token cannot create amenities → 403. ... ✅ Admin user already exists
+ok
+test_protected_route_accessible_with_token (test_auth.TestAuth.test_protected_route_accessible_with_token)
+Protected route accessible with valid token. ... ✅ Admin user already exists
+ok
+test_public_route_no_token_needed (test_auth.TestAuth.test_public_route_no_token_needed)
+Public routes accessible without token. ... ✅ Admin user already exists
+ok
+test_token_required_on_protected_route (test_auth.TestAuth.test_token_required_on_protected_route)
+Creating user without token returns 401. ... ✅ Admin user already exists
+ok
+test_add_amenity_to_place (test_entity_relationships.TestEntityRelationships.test_add_amenity_to_place)
+Owner can add amenity to place → 200. ... ✅ Admin user already exists
+ok
+test_cannot_add_amenity_without_token (test_entity_relationships.TestEntityRelationships.test_cannot_add_amenity_without_token)
+Adding amenity without token → 401. ... ✅ Admin user already exists
+ok
+test_non_owner_cannot_add_amenity (test_entity_relationships.TestEntityRelationships.test_non_owner_cannot_add_amenity)
+Non-owner cannot add amenity to place → 403. ... ✅ Admin user already exists
+ok
+test_place_amenities_empty_initially (test_entity_relationships.TestEntityRelationships.test_place_amenities_empty_initially)
+New place has no amenities. ... ✅ Admin user already exists
+ok
+test_place_amenity_visible_in_get (test_entity_relationships.TestEntityRelationships.test_place_amenity_visible_in_get)
+Added amenity appears in GET /places/<id>/amenities. ... ✅ Admin user already exists
+ok
+test_place_has_owner_id (test_entity_relationships.TestEntityRelationships.test_place_has_owner_id)
+Place response includes owner_id. ... ✅ Admin user already exists
+ok
+test_place_has_reviews (test_entity_relationships.TestEntityRelationships.test_place_has_reviews)
+GET /places/<id>/reviews returns reviews for that place. ... ✅ Admin user already exists
+ok
+test_place_reviews_empty_initially (test_entity_relationships.TestEntityRelationships.test_place_reviews_empty_initially)
+New place has no reviews. ... ✅ Admin user already exists
+ok
+test_remove_amenity_from_place (test_entity_relationships.TestEntityRelationships.test_remove_amenity_from_place)     
+Owner can remove amenity from place → 200. ... ✅ Admin user already exists
+ok
+test_fake_token_rejected (test_jwt_authentication.TestJWTAuthentication.test_fake_token_rejected)
+Fake JWT token → 401 or 422. ... ✅ Admin user already exists
+ok
+test_login_missing_password (test_jwt_authentication.TestJWTAuthentication.test_login_missing_password)
+Missing password → 400 (Flask-RESTX validation). ... ✅ Admin user already exists
+ok
+test_login_returns_token (test_jwt_authentication.TestJWTAuthentication.test_login_returns_token)
+Valid login returns access_token. ... ✅ Admin user already exists
+ok
+test_login_unknown_user (test_jwt_authentication.TestJWTAuthentication.test_login_unknown_user)
+Unknown email → 401. ... ✅ Admin user already exists
+ok
+test_login_wrong_password (test_jwt_authentication.TestJWTAuthentication.test_login_wrong_password)
+Wrong password → 401. ... ✅ Admin user already exists
+ok
+test_protected_endpoint_requires_token (test_jwt_authentication.TestJWTAuthentication.test_protected_endpoint_requires_token)
+jwt_required() endpoint → 401 without token. ... ✅ Admin user already exists
+ok
+test_protected_route_with_valid_token (test_jwt_authentication.TestJWTAuthentication.test_protected_route_with_valid_token)
+GET /auth/protected works with valid token. ... ✅ Admin user already exists
+ok
+test_public_routes_no_token_needed (test_jwt_authentication.TestJWTAuthentication.test_public_routes_no_token_needed) 
+Public endpoints → 200 without token. ... ✅ Admin user already exists
+ok
+test_token_grants_admin_access (test_jwt_authentication.TestJWTAuthentication.test_token_grants_admin_access)
+Admin token grants access to admin-only endpoints. ... ✅ Admin user already exists
+ok
+test_get_user_does_not_return_password (test_password_hashing.TestPasswordHashing.test_get_user_does_not_return_password)
+GET /users/<id> must not return password field. ... ✅ Admin user already exists
+ok
+test_get_users_list_no_password (test_password_hashing.TestPasswordHashing.test_get_users_list_no_password)
+GET /users/ must not expose password in any user. ... ✅ Admin user already exists
+ok
+test_login_validates_bcrypt_password (test_password_hashing.TestPasswordHashing.test_login_validates_bcrypt_password) 
+Login endpoint correctly validates bcrypt-hashed password. ... ✅ Admin user already exists
+ok
+test_post_user_hashes_password (test_password_hashing.TestPasswordHashing.test_post_user_hashes_password)
+POST /users/ stores hashed password, not plaintext. ... ✅ Admin user already exists
+ok
+test_verify_password_correct (test_password_hashing.TestPasswordHashing.test_verify_password_correct)
+verify_password() returns True for correct password (via API). ... ✅ Admin user already exists
+ok
+test_verify_password_wrong (test_password_hashing.TestPasswordHashing.test_verify_password_wrong)
+verify_password() returns False for wrong password. ... ✅ Admin user already exists
+ok
+test_add_amenity_no_token (test_place_amenity.TestPlaceAmenity.test_add_amenity_no_token)
+Without token should return 401. ... ✅ Admin user already exists
+ok
+test_add_amenity_nonexistent_place (test_place_amenity.TestPlaceAmenity.test_add_amenity_nonexistent_place)
+Adding amenity to a non-existent place should return 404. ... ✅ Admin user already exists
+ok
+test_add_amenity_to_place_as_admin (test_place_amenity.TestPlaceAmenity.test_add_amenity_to_place_as_admin)
+Admin can add an amenity to any place. ... ✅ Admin user already exists
+ok
+test_add_amenity_to_place_as_owner (test_place_amenity.TestPlaceAmenity.test_add_amenity_to_place_as_owner)
+Owner can add an amenity to their place. ... ✅ Admin user already exists
+ok
+test_add_amenity_wrong_user (test_place_amenity.TestPlaceAmenity.test_add_amenity_wrong_user)
+Non-owner cannot add amenity to someone else's place. ... ✅ Admin user already exists
+ok
+test_add_nonexistent_amenity (test_place_amenity.TestPlaceAmenity.test_add_nonexistent_amenity)
+Adding a non-existent amenity should return 404. ... ✅ Admin user already exists
+ok
+test_get_amenities_empty_place (test_place_amenity.TestPlaceAmenity.test_get_amenities_empty_place)
+New place has no amenities. ... ✅ Admin user already exists
+ok
+test_get_place_amenities (test_place_amenity.TestPlaceAmenity.test_get_place_amenities)
+GET /places/<id>/amenities returns list with added amenity. ... ✅ Admin user already exists
+ok
+test_create_place (test_place_crud.TestPlaceCRUD.test_create_place)
+POST /places/ creates place and returns 201. ... ✅ Admin user already exists
+ok
+test_get_all_places (test_place_crud.TestPlaceCRUD.test_get_all_places)
+GET /places/ returns a list. ... ✅ Admin user already exists
+ok
+test_get_nonexistent_place (test_place_crud.TestPlaceCRUD.test_get_nonexistent_place)
+GET /places/<invalid-id> → 404. ... ✅ Admin user already exists
+ok
+test_get_place (test_place_crud.TestPlaceCRUD.test_get_place)
+GET /places/<id> returns correct place. ... ✅ Admin user already exists
+ok
+test_non_owner_cannot_update_place (test_place_crud.TestPlaceCRUD.test_non_owner_cannot_update_place)
+Non-owner cannot update place → 403. ... ✅ Admin user already exists
+ok
+test_place_invalid_latitude (test_place_crud.TestPlaceCRUD.test_place_invalid_latitude)
+Latitude > 90 → 400. ... ✅ Admin user already exists
+ok
+test_place_invalid_longitude (test_place_crud.TestPlaceCRUD.test_place_invalid_longitude)
+Longitude > 180 → 400. ... ✅ Admin user already exists
+ok
+test_place_invalid_price (test_place_crud.TestPlaceCRUD.test_place_invalid_price)
+Negative price → 400. ... ✅ Admin user already exists
+ok
+test_place_owner_set_from_token (test_place_crud.TestPlaceCRUD.test_place_owner_set_from_token)
+owner_id in response matches authenticated user. ... ✅ Admin user already exists
+ok
+test_update_place (test_place_crud.TestPlaceCRUD.test_update_place)
+PUT /places/<id> updates place title. ... ✅ Admin user already exists
+ok
+test_create_place_valid (test_places.TestPlaceModel.test_create_place_valid)
+Test valid place creation. ... ok
+test_place_invalid_latitude (test_places.TestPlaceModel.test_place_invalid_latitude)
+Latitude must be between -90 and 90. ... ok
+test_place_invalid_longitude (test_places.TestPlaceModel.test_place_invalid_longitude)
+Longitude must be between -180 and 180. ... ok
+test_place_invalid_price (test_places.TestPlaceModel.test_place_invalid_price)
+Price cannot be negative. ... ok
+test_place_title_too_long (test_places.TestPlaceModel.test_place_title_too_long)
+Title must not exceed 255 characters. ... ok
+test_admin_bypasses_place_ownership (test_rbac.TestRBAC.test_admin_bypasses_place_ownership)
+Admin can update a place they don't own → 200. ... ✅ Admin user already exists
+ok
+test_admin_can_create_amenity (test_rbac.TestRBAC.test_admin_can_create_amenity) ... ✅ Admin user already exists
+ok
+test_admin_can_create_user (test_rbac.TestRBAC.test_admin_can_create_user) ... ✅ Admin user already exists
+ok
+test_admin_can_update_amenity (test_rbac.TestRBAC.test_admin_can_update_amenity) ... ✅ Admin user already exists
+ok
+test_admin_can_update_any_user (test_rbac.TestRBAC.test_admin_can_update_any_user) ... ✅ Admin user already exists
+ok
+test_non_admin_cannot_create_amenity (test_rbac.TestRBAC.test_non_admin_cannot_create_amenity) ... ✅ Admin user already exists
+ok
+test_non_admin_cannot_create_user (test_rbac.TestRBAC.test_non_admin_cannot_create_user) ... ✅ Admin user already exists
+ok
+test_user_cannot_modify_email (test_rbac.TestRBAC.test_user_cannot_modify_email) ... ✅ Admin user already exists
+ok
+test_user_cannot_modify_password (test_rbac.TestRBAC.test_user_cannot_modify_password) ... ✅ Admin user already exists
+ok
+test_user_cannot_update_another_user (test_rbac.TestRBAC.test_user_cannot_update_another_user) ... ✅ Admin user already exists
+ok
+test_cannot_review_own_place (test_review_crud.TestReviewCRUD.test_cannot_review_own_place)
+Owner cannot review their own place → 400. ... ✅ Admin user already exists
+ok
+test_cannot_review_same_place_twice (test_review_crud.TestReviewCRUD.test_cannot_review_same_place_twice)
+Same user cannot review same place twice → 400. ... ✅ Admin user already exists
+ok
+test_create_review (test_review_crud.TestReviewCRUD.test_create_review)
+Reviewer can review a place they don't own → 201. ... ✅ Admin user already exists
+ok
+test_delete_own_review (test_review_crud.TestReviewCRUD.test_delete_own_review)
+Author can delete their own review → 200. ... ✅ Admin user already exists
+ok
+test_get_review (test_review_crud.TestReviewCRUD.test_get_review)
+GET /reviews/<id> returns the review. ... ✅ Admin user already exists
+ok
+test_review_invalid_rating_too_high (test_review_crud.TestReviewCRUD.test_review_invalid_rating_too_high)
+Rating > 5 → 400. ... ✅ Admin user already exists
+ok
+test_review_invalid_rating_too_low (test_review_crud.TestReviewCRUD.test_review_invalid_rating_too_low)
+Rating < 1 → 400. ... ✅ Admin user already exists
+ok
+test_review_not_found (test_review_crud.TestReviewCRUD.test_review_not_found)
+GET /reviews/<fake-id> → 404. ... ✅ Admin user already exists
+ok
+test_cannot_review_own_place (test_reviews.TestReviewEndpoints.test_cannot_review_own_place)
+Owner cannot review their own place. ... ✅ Admin user already exists
+ok
+test_cannot_review_same_place_twice (test_reviews.TestReviewEndpoints.test_cannot_review_same_place_twice)
+User cannot review same place twice. ... ✅ Admin user already exists
+ok
+test_create_review_invalid_rating (test_reviews.TestReviewEndpoints.test_create_review_invalid_rating)
+Rating must be between 1 and 5. ... ✅ Admin user already exists
+ok
+test_create_review_no_token (test_reviews.TestReviewEndpoints.test_create_review_no_token)
+Without token, Flask-RESTX validates payload first → 400 or 401. ... ✅ Admin user already exists
+ok
+test_create_review_valid (test_reviews.TestReviewEndpoints.test_create_review_valid)
+Reviewer can review a place they don't own. ... ✅ Admin user already exists
+ok
+test_delete_review (test_reviews.TestReviewEndpoints.test_delete_review)
+User can delete their own review. ... ✅ Admin user already exists
+ok
+test_admin_password_is_bcrypt (test_sql_schema.TestSQLSchema.test_admin_password_is_bcrypt)
+Admin password stored as bcrypt hash ($2b$). ... ✅ Admin user already exists
+ok
+test_admin_user_exists (test_sql_schema.TestSQLSchema.test_admin_user_exists)
+Admin user admin@hbnb.io is present and is_admin=1. ... ✅ Admin user already exists
+ok
+test_all_tables_exist (test_sql_schema.TestSQLSchema.test_all_tables_exist)
+All required tables exist. ... ✅ Admin user already exists
+ok
+test_amenities_count (test_sql_schema.TestSQLSchema.test_amenities_count)
+At least 3 amenities are present. ... ✅ Admin user already exists
+ok
+test_cascade_delete_place_amenity_with_place (test_sql_schema.TestSQLSchema.test_cascade_delete_place_amenity_with_place)
+Deleting a place via ORM cascades to place_amenity entries. ... ✅ Admin user already exists
+ok
+test_cascade_delete_reviews_with_place (test_sql_schema.TestSQLSchema.test_cascade_delete_reviews_with_place)
+Deleting a place via ORM cascades to its reviews. ... ✅ Admin user already exists
+ok
+test_foreign_key_place_references_user (test_sql_schema.TestSQLSchema.test_foreign_key_place_references_user)
+Place.owner_id must reference a valid user (FK). ... ✅ Admin user already exists
+ok
+test_review_rating_check_too_high (test_sql_schema.TestSQLSchema.test_review_rating_check_too_high)
+Rating > 5 raises IntegrityError. ... ✅ Admin user already exists
+ok
+test_review_rating_check_too_low (test_sql_schema.TestSQLSchema.test_review_rating_check_too_low)
+Rating < 1 raises IntegrityError. ... ✅ Admin user already exists
+ok
+test_unique_email_constraint (test_sql_schema.TestSQLSchema.test_unique_email_constraint)
+Inserting duplicate email raises IntegrityError. ... ✅ Admin user already exists
+ok
+test_create_user (test_user_crud.TestUserCRUD.test_create_user)
+POST /users/ creates user and returns 201. ... ✅ Admin user already exists
+ok
+test_create_user_missing_password (test_user_crud.TestUserCRUD.test_create_user_missing_password)
+POST /users/ without password → 400. ... ✅ Admin user already exists
+ok
+test_duplicate_email_rejected (test_user_crud.TestUserCRUD.test_duplicate_email_rejected)
+Creating user with existing email → 400. ... ✅ Admin user already exists
+ok
+test_get_all_users (test_user_crud.TestUserCRUD.test_get_all_users)
+GET /users/ returns a list. ... ✅ Admin user already exists
+ok
+test_get_nonexistent_user (test_user_crud.TestUserCRUD.test_get_nonexistent_user)
+GET /users/<invalid-id> → 404. ... ✅ Admin user already exists
+ok
+test_get_user (test_user_crud.TestUserCRUD.test_get_user)
+GET /users/<id> returns correct user. ... ✅ Admin user already exists
+ok
+test_update_user (test_user_crud.TestUserCRUD.test_update_user)
+PUT /users/<id> updates user fields. ... ✅ Admin user already exists
+ok
+test_create_duplicate_email (test_users.TestUserEndpoints.test_create_duplicate_email)
+Creating user with existing email should return 400. ... ✅ Admin user already exists
+ok
+test_create_user_missing_password (test_users.TestUserEndpoints.test_create_user_missing_password)
+User creation without password should fail with 400. ... ✅ Admin user already exists
+ok
+test_create_user_no_token (test_users.TestUserEndpoints.test_create_user_no_token)
+Without token should return 401. ... ✅ Admin user already exists
+ok
+test_create_user_valid (test_users.TestUserEndpoints.test_create_user_valid)
+Admin can create a user. ... ✅ Admin user already exists
+ok
+test_get_user_not_found (test_users.TestUserEndpoints.test_get_user_not_found)
+GET /users/<invalid-id> should return 404. ... ✅ Admin user already exists
+ok
+test_get_users (test_users.TestUserEndpoints.test_get_users)
+GET /users/ should return 200 and a list. ... ✅ Admin user already exists
+ok
+test_non_admin_cannot_create_user (test_users.TestUserEndpoints.test_non_admin_cannot_create_user)
+Non-admin user cannot create users → 403. ... ✅ Admin user already exists
+ok
+
+----------------------------------------------------------------------
+Ran 117 tests in 49.481s 
+
+
+ OK
 ```
 
 ### test_password_hashing.py — Task 1
@@ -1324,4 +1677,6 @@ sqlite3 instance/development.db "SELECT * FROM place_amenity;"
 ## Authors
 
 - **Tommy Jouhans**
+
+
 - **James Roussel**
