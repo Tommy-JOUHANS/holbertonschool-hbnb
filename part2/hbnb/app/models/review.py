@@ -19,6 +19,10 @@ class Review(BaseModel):
 
         if not isinstance(rating, int) or not (1 <= rating <= 5):
             raise ValueError("Rating must be an integer between 1 and 5")
+        
+        if len(text) > 1000:
+            raise ValueError("Review text must not exceed 1000 characters")
+ 
 
         self.text = text
         self.rating = rating

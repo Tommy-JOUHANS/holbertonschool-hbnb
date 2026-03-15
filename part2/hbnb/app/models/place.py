@@ -12,7 +12,18 @@ class Place(BaseModel):
                  owner=None, owner_id=None):
 
         super().__init__()
-
+        
+        
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("Title is required")
+        if len(title) > 255:
+            raise ValueError("Title must not exceed 255 characters")
+ 
+       
+        if description is not None and len(description) > 1000:
+            raise ValueError("Description must not exceed 1000 characters")
+ 
+        
         if not isinstance(title, str) or not title.strip():
             raise ValueError("Title is required")
 
