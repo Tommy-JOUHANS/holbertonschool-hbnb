@@ -261,7 +261,7 @@ def verify_password(self, password):
 ```bash
 TOKEN=$(curl -s -X POST http://127.0.0.1:5000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+  -d '{"email":"admin@hbnb.io","password":"admin1234"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 ```
 
 
@@ -348,7 +348,7 @@ def create_app(config_class=None):
 ```bash
 curl -X POST "http://127.0.0.1:5000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@example.com", "password": "admin123"}'
+  -d '{"email":"admin@hbnb.io","password":"admin1234"}'
 ```
 
 **Expected Response:**
