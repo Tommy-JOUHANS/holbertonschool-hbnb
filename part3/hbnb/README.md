@@ -40,7 +40,6 @@ part3/
 ├── hbnb/
 │   ├── app/
 │   │   ├── __init__.py          # Application factory
-│   │   ├── config.py            # Configuration classes
 │   │   ├── utils.py             # Password hashing utilities
 │   │   ├── api/
 │   │   │   └── v1/
@@ -60,7 +59,11 @@ part3/
 │   │   │   └── repository.py    # InMemory & SQLAlchemy repositories
 │   │   └── services/
 │   │       └── facade.py        # Business logic facade
+|   |__ config.py                # Configuration classes
 │   └── run.py                   # Entry point
+|   |__ initial_data.sql         # Initialize databases SQL
+|   |__ schema.sql               # Create Table of databases
+|
 ├── instance/
 │   └── development.db           # SQLite database
 └── README.md
@@ -183,22 +186,34 @@ Responsibilities:
 The `create_app()` function in `app/__init__.py` receives a configuration class and applies it to the Flask instance.
 
 ```python
-# hbnb/app/config.py
+# hbnb/config.py
 import os
 
 class Config:
+    """Base configuration class."""
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=30)
     DEBUG = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+
 class DevelopmentConfig(Config):
+    """Development configuration."""
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///development.db'
 
-class ProductionConfig(Config):
-    DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///production.db')
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///development.db'
+    JWT_SECRET_KEY = 'test-secret'
+
+config = {
+    'development': DevelopmentConfig,
+    'default': DevelopmentConfig,
+    'testing': TestingConfig,
+}
+
 ```
 
 ```python
@@ -217,7 +232,7 @@ def create_app(config_class=None):
 from hbnb.app import create_app
 from hbnb.app.config import DevelopmentConfig
 
-app = create_app(DevelopmentConfig)
+app = create_app('development')
 
 if __name__ == '__main__':
     app.run(debug=True)
