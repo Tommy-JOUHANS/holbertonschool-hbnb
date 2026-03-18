@@ -1174,7 +1174,7 @@ erDiagram
 class Reservation(BaseModel, db.Model):
     __tablename__ = "Reservation"
 
-    id          = Column(String(36), PrimaryKey
+    id          = Column(String(36), PrimaryKey)
     user_id     = Column(String(36), ForeignKey("users.id",  ondelete="CASCADE"), nullable=False)
     place_id    = Column(String(36), ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
     start_date    = Column(Date,    nullable=False)
