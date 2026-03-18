@@ -1171,15 +1171,16 @@ erDiagram
 ### Booking Model (SQLAlchemy)
 
 ```python
-class Booking(BaseModel, db.Model):
-    __tablename__ = "bookings"
+class Reservation(BaseModel, db.Model):
+    __tablename__ = "Reservation"
 
+    id          = Column(String(36), PrimaryKey
     user_id     = Column(String(36), ForeignKey("users.id",  ondelete="CASCADE"), nullable=False)
     place_id    = Column(String(36), ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
-    check_in    = Column(Date,    nullable=False)
-    check_out   = Column(Date,    nullable=False)
+    start_date    = Column(Date,    nullable=False)
+    end_date  = Column(Date,    nullable=False)
     total_price = Column(Numeric(10, 2), nullable=False)
-    status      = Column(Enum("pending", "confirmed", "cancelled"), default="pending")
+    
 
     # passive_deletes=True: lets the DB ON DELETE CASCADE handle deletion
     # without SQLAlchemy attempting a SET NULL first
@@ -1689,46 +1690,7 @@ Ran 117 tests in 49.481s
 | `test_remove_amenity_from_place` | Remove Place-Amenity link | ✅ PASS |
 | `test_cascade_delete_place_removes_place_amenity` | Delete Place → `place_amenity` CASCADE | ✅ PASS |
 
-### test_booking_creation.py — Bonus Reservation
 
-| Test | Description | Status |
-|---|---|---|
-| `test_create_booking_default_status` | Default status `pending` | ✅ PASS |
-| `test_booking_user_orm_relationship` | `booking.user` ORM correct | ✅ PASS |
-| `test_booking_place_orm_relationship` | `booking.place` ORM correct | ✅ PASS |
-| `test_booking_persisted_in_db` | Booking persisted and recoverable via ID | ✅ PASS |
-
-### test_booking_one_to_many.py — Bonus Reservation
-
-| Test | Description | Status |
-|---|---|---|
-| `test_user_has_multiple_bookings` | User → N Bookings (1→N) | ✅ PASS |
-| `test_place_has_multiple_bookings` | Place → N Bookings (1→N) | ✅ PASS |
-| `test_user_bookings_backref_works` | `user.bookings` backref ORM | ✅ PASS |
-| `test_place_bookings_backref_works` | `place.bookings` backref ORM | ✅ PASS |
-
-### test_booking_business_rules.py — Bonus Reservation
-
-| Test | Description | Status |
-|---|---|---|
-| `test_owner_cannot_book_own_place` | Owner cannot reserve their space | ✅ PASS |
-| `test_non_owner_can_book` | Non-owners can book | ✅ PASS |
-| `test_booking_nights_calculation` | `nights()` = check_out − check_in | ✅ PASS |
-| `test_booking_nights_one_night` | `nights()` = 1 for one night| ✅ PASS |
-| `test_status_pending_to_confirmed` | Status `pending` → `confirmed` | ✅ PASS |
-| `test_status_confirmed_to_cancelled` | Status `confirmed` → `cancelled` | ✅ PASS |
-| `test_to_dict_has_all_fields` | `to_dict()` contains all required fields | ✅ PASS |
-| `test_to_dict_nights_correct` | `to_dict()['nights']` correct | ✅ PASS |
-
-### test_cascade_delete_*.py — Bonus Reservation
-
-| Test | Description | Status |
-|---|---|---|
-| `test_cascade_delete_user_removes_bookings` | User deletion → Bookings deleted | ✅ PASS |
-| `test_cascade_delete_place_removes_bookings` | Place removed → Bookings deleted | ✅ PASS |
-| `test_deleting_user_does_not_delete_place` | User deletion does not delete the Place | ✅ PASS |
-
----
 
 ## Setup & Installation
 
