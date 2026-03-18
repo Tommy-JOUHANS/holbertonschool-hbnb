@@ -18,9 +18,13 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///development.db'
 
 
-
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///development.db'
+    JWT_SECRET_KEY = 'test-secret'
 
 config = {
     'development': DevelopmentConfig,
-    'default': DevelopmentConfig
+    'default': DevelopmentConfig,
+    'testing': TestingConfig,
 }
