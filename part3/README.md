@@ -1092,7 +1092,7 @@ It is not in your current code but appears here as a possible extension. It cont
 Differences with the previous schema
 The SQL types are specified (CHAR(36), VARCHAR(255), DECIMAL(10,2)…) and the RESERVATION table is added — this schema is therefore closer to raw SQL than to the current code implementation.
 
-In summary: this is the complete planned database diagram, with the reservation added — a feature that is not yet coded in your project.
+In summary: this is the complete planned database diagram, with the reservation added — a feature that is not yet coded in our project.
 
 ### Booking Model (SQLAlchemy)
 
