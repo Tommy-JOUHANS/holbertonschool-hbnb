@@ -1013,6 +1013,14 @@ erDiagram
 
 ![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-er-diagram.png)
 
+
+- USER owns PLACE — a user can own multiple places, a place has a single owner.
+
+- USER writes REVIEW — a user can write multiple reviews.
+ - PLACE has REVIEW — a place can have multiple reviews, a review belongs to a single place.
+- PLACE ↔ AMENITY — Many-to-Many relationship. A place can have multiple amenities, an amenity can be in multiple places. 
+
+- The PLACE_AMENITY table links the two — it contains only place_id and amenity_id.
 ---
 
 *If we can to add Reservation entity:*
@@ -1076,6 +1084,15 @@ erDiagram
 
 ![ER Mermaid](https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/images/mermaid-er-diagram-reservation.png)
 
+The known relationships are the same: USER owns PLACE, writes REVIEW, PLACE and AMENITY are linked via PLACE_AMENITY.
+
+The new element: the RESERVATION table
+It is not in your current code but appears here as a possible extension. It contains a user_id, a place_id, a start date, an end date, and a total price. A user makes a reservation, a lodging receives a reservation.
+
+Differences with the previous schema
+The SQL types are specified (CHAR(36), VARCHAR(255), DECIMAL(10,2)…) and the RESERVATION table is added — this schema is therefore closer to raw SQL than to the current code implementation.
+
+In summary: this is the complete planned database diagram, with the reservation added — a feature that is not yet coded in your project.
 
 ### Booking Model (SQLAlchemy)
 
@@ -1672,3 +1689,4 @@ sqlite3 instance/development.db "SELECT * FROM place_amenity;"
 - **Tommy Jouhans**
 
 - **James Roussel**
+
