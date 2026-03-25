@@ -6,6 +6,7 @@ from flask_restx import Api
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from hbnb.config import config
  
 # =============================================================================
@@ -23,8 +24,18 @@ db = SQLAlchemy()
 def create_app(config_name='testing'):
     """Application factory."""
     app = Flask(__name__)
+    app.url_map.strict_slashes = False 
     app.config.from_object(config[config_name])
- 
+    
+    CORS(app,
+     resources={r"/api/v1/*": {
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": False
+     }},
+     send_wildcard=True
+)
     # -------------------------------------------------------------------------
     # 1. Initialize the extensions with the app
     # -------------------------------------------------------------------------
