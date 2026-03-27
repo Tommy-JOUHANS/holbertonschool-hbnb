@@ -74,6 +74,7 @@ function displayPlaces(places) {
         return;
     }
     places.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
 
     places.forEach(place => {
         const card = document.createElement('article');
@@ -160,6 +161,13 @@ async function fetchPlaceDetails(token, placeId) {
                 if (revRes.ok) place.reviews = await revRes.json();
             } catch {}
         }
+
+        await Promise.all(place.reviews.map(async (review) => {
+        if (!review.user && review.user_id) {
+            const userRes = await fetch(`${API_BASE}/users/${review.user_id}`, { headers });
+            if (userRes.ok) review.user = await userRes.json();
+        }
+        }));
 
         displayPlaceDetails(place);
 
