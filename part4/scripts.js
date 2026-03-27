@@ -121,7 +121,7 @@ function getPlaceIdFromURL() {
     return new URLSearchParams(window.location.search).get('id');
 }
 
-// Fetch place + amenities séparées si besoin
+// Fetch place + amenities + host
 async function fetchPlaceDetails(token, placeId) {
     try {
         const headers = {
@@ -129,24 +129,26 @@ async function fetchPlaceDetails(token, placeId) {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
 
+        // 1. Détails de la place
         const placeRes = await fetch(`${API_BASE}/places/${placeId}`, { headers });
         if (!placeRes.ok) throw new Error(placeRes.statusText);
         const place = await placeRes.json();
 
-        console.log('Place reçue:', place);
-        console.log('Amenities dans place:', place.amenities);
-
-        // Si amenities vides/absentes → essaye l'endpoint séparé
+        // 2. Amenities séparées si absentes
         if (!place.amenities || place.amenities.length === 0) {
             try {
                 const amenRes = await fetch(`${API_BASE}/places/${placeId}/amenities`, { headers });
-                if (amenRes.ok) {
-                    place.amenities = await amenRes.json();
-                    console.log('Amenities chargées séparément:', place.amenities);
-                }
-            } catch {
-                // endpoint séparé n'existe pas, on continue
-            }
+                if (amenRes.ok) place.amenities = await amenRes.json();
+            } catch {}
+        }
+
+        // 3. Host — cherche l'ID du propriétaire dans la place
+        const ownerId = place.owner_id || place.host_id || place.user_id;
+        if (ownerId && !place.host && !place.owner) {
+            try {
+                const userRes = await fetch(`${API_BASE}/users/${ownerId}`, { headers });
+                if (userRes.ok) place.host = await userRes.json();
+            } catch {}
         }
 
         displayPlaceDetails(place);
@@ -171,16 +173,13 @@ function displayPlaceDetails(place) {
     const detailsEl = document.getElementById('place-details');
     if (detailsEl) {
 
-        // HOST
+        // HOST — chargé via fetchPlaceDetails dans place.host
         let hostName = 'N/A';
-        if (place.host && typeof place.host === 'object') {
-            hostName = `${place.host.first_name ?? ''} ${place.host.last_name ?? ''}`.trim() || 'N/A';
-        } else if (place.owner && typeof place.owner === 'object') {
-            hostName = `${place.owner.first_name ?? ''} ${place.owner.last_name ?? ''}`.trim() || 'N/A';
-        } else if (typeof place.owner === 'string') {
-            hostName = place.owner;
-        } else if (typeof place.host === 'string') {
-            hostName = place.host;
+        const hostObj = place.host || place.owner;
+        if (hostObj && typeof hostObj === 'object') {
+            hostName = `${hostObj.first_name ?? ''} ${hostObj.last_name ?? ''}`.trim() || 'N/A';
+        } else if (typeof hostObj === 'string') {
+            hostName = hostObj;
         }
 
         // AMENITIES
