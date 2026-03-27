@@ -311,12 +311,18 @@ function initLoginPage() {
 // ============================================================
 //  ADD REVIEW PAGE
 // ============================================================
-function checkAuthenticationReview() {
+
+// Étape 1 — Vérifie l'authentification (pattern de l'énoncé)
+// Si pas de token → redirige vers index.html
+function checkAuthentication() {
     const token = getCookie('token');
-    if (!token) window.location.href = 'index.html';
+    if (!token) {
+        window.location.href = 'index.html';
+    }
     return token;
 }
 
+// Étape 4 — POST /api/v1/reviews avec token + body JSON
 async function submitReview(token, placeId, reviewText, rating) {
     try {
         const response = await fetch(`${API_BASE}/reviews`, {
@@ -325,8 +331,13 @@ async function submitReview(token, placeId, reviewText, rating) {
                 'Content-Type':  'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ place_id: placeId, text: reviewText, rating: rating })
+            body: JSON.stringify({
+                place_id: placeId,
+                text:     reviewText,
+                rating:   rating
+            })
         });
+        // Étape 5 — gère la réponse
         const data = await response.json().catch(() => null);
         handleResponse(response, data);
     } catch (err) {
@@ -334,28 +345,33 @@ async function submitReview(token, placeId, reviewText, rating) {
     }
 }
 
+// Étape 5 — Succès : message + reset + redirect | Échec : message erreur
 function handleResponse(response, data) {
     if (response.ok) {
         alert('Review submitted successfully!');
         const form = document.getElementById('review-form');
         if (form) form.reset();
         const placeId = getPlaceIdFromURL();
-        if (placeId && window.location.pathname.endsWith('add_review.html')) {
+        if (placeId) {
             window.location.href = `place.html?id=${placeId}`;
         }
     } else {
         const msg = data?.message || data?.error || `Error ${response.status}`;
-        alert('Submission failed: ' + msg);
+        alert('Failed to submit review: ' + msg);
     }
 }
 
+// Point d'entrée add_review.html
 function initAddReviewPage() {
-    const token   = checkAuthenticationReview();
+    // Étape 1 — auth check (redirige si non connecté)
+    const token = checkAuthentication();
+    // Étape 2 — place ID depuis l'URL
     const placeId = getPlaceIdFromURL();
 
     updateAuthUI();
     setupLogout();
 
+    // Affiche le nom de la place dans le titre
     if (placeId) {
         fetch(`${API_BASE}/places/${placeId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -369,13 +385,15 @@ function initAddReviewPage() {
         .catch(() => {});
     }
 
+    // Étape 3 — event listener sur le formulaire
     const reviewForm = document.getElementById('review-form');
     if (reviewForm) {
-        reviewForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        reviewForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
             const reviewText = document.getElementById('review').value.trim();
             const rating     = parseInt(document.getElementById('rating').value);
             if (!reviewText) return;
+            // Étape 4 — requête AJAX
             await submitReview(token, placeId, reviewText, rating);
         });
     }
