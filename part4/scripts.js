@@ -151,6 +151,14 @@ async function fetchPlaceDetails(token, placeId) {
             } catch {}
         }
 
+        // 4. Reviews séparées si absentes dans l'objet place
+        if (!place.reviews || place.reviews.length === 0) {
+            try {
+                const revRes = await fetch(`${API_BASE}/places/${placeId}/reviews`, { headers });
+                if (revRes.ok) place.reviews = await revRes.json();
+            } catch {}
+        }
+
         displayPlaceDetails(place);
 
     } catch (err) {
@@ -227,9 +235,16 @@ function displayPlaceDetails(place) {
             reviews.forEach(r => {
                 const card = document.createElement('article');
                 card.className = 'review-card';
-                const userName = r.user
-                    ? (r.user.first_name ?? r.user.name ?? 'Anonymous')
-                    : 'Anonymous';
+
+                // user peut être un objet {first_name, last_name}
+                // ou absent (API retourne seulement user_id)
+                let userName = 'Anonymous';
+                if (r.user && typeof r.user === 'object') {
+                    userName = r.user.first_name ?? r.user.name ?? 'Anonymous';
+                } else if (r.user_name) {
+                    userName = r.user_name;
+                }
+
                 card.innerHTML = `
                     <h3>${userName}:</h3>
                     <p>${r.text || r.comment || ''}</p>
@@ -323,8 +338,14 @@ function checkAuthentication() {
 }
 
 // Étape 4 — POST /api/v1/reviews avec token + body JSON
+// user_id est requis par l'API Flask (review_model validate=True)
+// On le récupère depuis le token JWT
 async function submitReview(token, placeId, reviewText, rating) {
     try {
+        // Décode le user_id depuis le payload JWT
+        const payload  = JSON.parse(atob(token.split('.')[1]));
+        const userId   = payload.sub || payload.identity;
+
         const response = await fetch(`${API_BASE}/reviews`, {
             method: 'POST',
             headers: {
@@ -334,7 +355,8 @@ async function submitReview(token, placeId, reviewText, rating) {
             body: JSON.stringify({
                 place_id: placeId,
                 text:     reviewText,
-                rating:   rating
+                rating:   rating,
+                user_id:  userId   // ← requis par review_model Flask
             })
         });
         // Étape 5 — gère la réponse
@@ -391,8 +413,18 @@ function initAddReviewPage() {
         reviewForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const reviewText = document.getElementById('review').value.trim();
-            const rating     = parseInt(document.getElementById('rating').value);
-            if (!reviewText) return;
+            const ratingVal  = document.getElementById('rating').value;
+            const rating     = parseInt(ratingVal);
+
+            // Validation côté client
+            if (!reviewText) {
+                alert('Please write a review.');
+                return;
+            }
+            if (!ratingVal || isNaN(rating)) {
+                alert('Please select a rating.');
+                return;
+            }
             // Étape 4 — requête AJAX
             await submitReview(token, placeId, reviewText, rating);
         });
