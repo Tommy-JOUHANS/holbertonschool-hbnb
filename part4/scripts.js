@@ -73,6 +73,8 @@ function displayPlaces(places) {
         list.innerHTML = '<p style="text-align:center;color:#888;">No places available.</p>';
         return;
     }
+    places.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
     places.forEach(place => {
         const card = document.createElement('article');
         card.className = 'place-card';
@@ -356,7 +358,7 @@ async function submitReview(token, placeId, reviewText, rating) {
                 place_id: placeId,
                 text:     reviewText,
                 rating:   rating,
-                user_id:  userId   // ← requis par review_model Flask
+                user_id:  userId   
             })
         });
         // Étape 5 — gère la réponse
