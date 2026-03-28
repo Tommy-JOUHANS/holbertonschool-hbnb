@@ -427,3 +427,33 @@ footer p {
     height: 100px;
     margin-right: 8px;
 }
+
+.error-msg {
+    background-color: var(--color-background-danger, #fff0f0);
+    color: var(--color-text-danger, #c0392b);
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.success-msg {
+    background-color: #f0fff4;
+    color: #1a7a3a;
+    border: 1px solid #b2dfdb;
+    border-radius: 6px;
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+}
