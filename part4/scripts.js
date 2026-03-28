@@ -10,21 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 const API_URL  = 'http://127.0.0.1:5000';
 const API_BASE = `${API_URL}/api/v1`;
 
-async function loginUser(email, password) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    if (response.ok) {
-        const data = await response.json();
-        document.cookie = `token=${data.access_token}; path=/`;
-        window.location.href = 'index.html';
-    } else {
-        // AVANT : alert('Login failed: ' + response.statusText);
-        showMessage('login-error', 'Email ou mot de passe incorrect.');
-    }
-}
+// ============================================================
+//  UTILITAIRES
+// ============================================================
 
 function getCookie(name) {
     const match = document.cookie
@@ -34,16 +22,20 @@ function getCookie(name) {
 }
 
 function getToken()   { return getCookie('token'); }
-
 function isLoggedIn() { return !!getToken(); }
 
+/**
+ * Affiche un message d'erreur ou de succès dans un élément HTML.
+ * @param {string} elementId - ID de l'élément cible
+ * @param {string} message   - Texte à afficher
+ * @param {string} type      - 'error' (défaut) ou 'success'
+ */
 function showMessage(elementId, message, type = 'error') {
     const el = document.getElementById(elementId);
     if (!el) return;
     el.textContent = message;
     el.className = type === 'error' ? 'error-msg' : 'success-msg';
     el.style.display = 'block';
-    // Efface le message après 5 secondes
     setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
@@ -73,8 +65,45 @@ function renderStars(rating) {
 }
 
 // ============================================================
+//  LOGIN PAGE
+// ============================================================
+
+/**
+ * Envoie les identifiants à l'API et stocke le token JWT en cookie.
+ * Affiche un message d'erreur inline si la connexion échoue.
+ */
+async function loginUser(email, password) {
+    const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    if (response.ok) {
+        const data = await response.json();
+        document.cookie = `token=${data.access_token}; path=/`;
+        window.location.href = 'index.html';
+    } else {
+        showMessage('login-error', 'Email ou mot de passe incorrect.');
+    }
+}
+
+function initLoginPage() {
+    if (isLoggedIn()) { window.location.href = 'index.html'; return; }
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            await loginUser(email, password);
+        });
+    }
+}
+
+// ============================================================
 //  INDEX PAGE
 // ============================================================
+
 async function fetchPlaces(token) {
     try {
         const response = await fetch(`${API_BASE}/places`, {
@@ -132,7 +161,6 @@ function renderPaginationControls(places, page) {
     container.innerHTML = '';
     if (totalPages <= 1) return;
 
-    // Crée un élément <a> style cercle
     function makeItem(label, targetPage, isActive, isDisabled, isEllipsis) {
         const a = document.createElement('a');
         a.textContent = label;
@@ -157,15 +185,12 @@ function renderPaginationControls(places, page) {
         return a;
     }
 
-    // Wrap CDP
     const cdp = document.createElement('div');
     cdp.className = 'cdp';
     cdp.setAttribute('actpage', page);
 
-    // PREV
     cdp.appendChild(makeItem('prev', page - 1, false, page === 1, false));
 
-    // Calcul des pages à afficher
     const pages = new Set([1, totalPages]);
     for (let i = Math.max(2, page - 2); i <= Math.min(totalPages - 1, page + 2); i++) {
         pages.add(i);
@@ -179,9 +204,7 @@ function renderPaginationControls(places, page) {
         cdp.appendChild(makeItem(p, p, p === page, false, false));
     });
 
-    // NEXT
     cdp.appendChild(makeItem('next', page + 1, false, page === totalPages, false));
-
     container.appendChild(cdp);
 }
 
@@ -194,7 +217,6 @@ function displayPlaces(places) {
         return;
     }
 
-    // Tri : dernière publication en haut, première en bas
     places.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     allPlaces   = places;
@@ -218,7 +240,6 @@ function initIndexPage() {
         fetchPlaces(token);
     }
 
-    // Filtre prix
     const filter = document.getElementById('price-filter');
     if (filter) {
         filter.addEventListener('change', (e) => {
@@ -244,11 +265,15 @@ function initIndexPage() {
 // ============================================================
 //  PLACE DETAILS PAGE
 // ============================================================
+
 function getPlaceIdFromURL() {
     return new URLSearchParams(window.location.search).get('id');
 }
 
-// Fetch place + amenities + host
+/**
+ * Charge les détails complets d'un lieu :
+ * place → amenities → host → reviews → auteur de chaque review
+ */
 async function fetchPlaceDetails(token, placeId) {
     try {
         const headers = {
@@ -256,12 +281,10 @@ async function fetchPlaceDetails(token, placeId) {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
 
-        // 1. Détails de la place
         const placeRes = await fetch(`${API_BASE}/places/${placeId}`, { headers });
         if (!placeRes.ok) throw new Error(placeRes.statusText);
         const place = await placeRes.json();
 
-        // 2. Amenities séparées si absentes
         if (!place.amenities || place.amenities.length === 0) {
             try {
                 const amenRes = await fetch(`${API_BASE}/places/${placeId}/amenities`, { headers });
@@ -269,7 +292,6 @@ async function fetchPlaceDetails(token, placeId) {
             } catch {}
         }
 
-        // 3. Host — cherche l'ID du propriétaire dans la place
         const ownerId = place.owner_id || place.host_id || place.user_id;
         if (ownerId && !place.host && !place.owner) {
             try {
@@ -278,7 +300,6 @@ async function fetchPlaceDetails(token, placeId) {
             } catch {}
         }
 
-        // 4. Reviews séparées si absentes dans l'objet place
         if (!place.reviews || place.reviews.length === 0) {
             try {
                 const revRes = await fetch(`${API_BASE}/places/${placeId}/reviews`, { headers });
@@ -286,7 +307,6 @@ async function fetchPlaceDetails(token, placeId) {
             } catch {}
         }
 
-        // 5. Pour chaque review, charge le nom de l'auteur via user_id
         if (place.reviews && place.reviews.length > 0) {
             await Promise.all(place.reviews.map(async (review) => {
                 if (!review.user && review.user_id) {
@@ -308,19 +328,15 @@ async function fetchPlaceDetails(token, placeId) {
 }
 
 function displayPlaceDetails(place) {
-    // Titre
     const titleEl = document.getElementById('place-title');
     if (titleEl) titleEl.textContent = place.title;
     document.title = place.title;
 
-    // Lien add_review
     const addReviewLink = document.getElementById('add-review-link');
     if (addReviewLink) addReviewLink.href = `add_review.html?id=${place.id}`;
 
     const detailsEl = document.getElementById('place-details');
     if (detailsEl) {
-
-        // HOST — chargé via fetchPlaceDetails dans place.host
         let hostName = 'N/A';
         const hostObj = place.host || place.owner;
         if (hostObj && typeof hostObj === 'object') {
@@ -329,7 +345,6 @@ function displayPlaceDetails(place) {
             hostName = hostObj;
         }
 
-        // AMENITIES
         let amenities = 'N/A';
         const amenitiesRaw = place.amenities ?? place.place_amenities ?? [];
         if (Array.isArray(amenitiesRaw) && amenitiesRaw.length > 0) {
@@ -356,7 +371,6 @@ function displayPlaceDetails(place) {
         });
     }
 
-    // Reviews
     const reviewsEl = document.getElementById('reviews');
     if (reviewsEl) {
         reviewsEl.innerHTML = '';
@@ -375,8 +389,6 @@ function displayPlaceDetails(place) {
                 const card = document.createElement('article');
                 card.className = 'review-card';
 
-                // user peut être un objet {first_name, last_name}
-                // ou absent (API retourne seulement user_id)
                 let userName = 'Anonymous';
                 if (r.user && typeof r.user === 'object') {
                     userName = r.user.first_name ?? r.user.name ?? 'Anonymous';
@@ -416,7 +428,7 @@ function initPlacePage() {
 }
 
 // ============================================================
-//  INLINE REVIEW FORM
+//  INLINE REVIEW FORM (place.html)
 // ============================================================
 function setupInlineReviewForm(placeId) {
     const form = document.getElementById('review-form');
@@ -432,42 +444,13 @@ function setupInlineReviewForm(placeId) {
 }
 
 // ============================================================
-//  LOGIN PAGE
-// ============================================================
-async function loginUser(email, password) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-    });
-    if (response.ok) {
-        const data = await response.json();
-        document.cookie = `token=${data.access_token}; path=/`;
-        window.location.href = 'index.html';
-    } else {
-        alert('Login failed: ' + response.statusText);
-    }
-}
-
-function initLoginPage() {
-    if (isLoggedIn()) { window.location.href = 'index.html'; return; }
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email    = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            await loginUser(email, password);
-        });
-    }
-}
-
-// ============================================================
 //  ADD REVIEW PAGE
 // ============================================================
 
-// Étape 1 — Vérifie l'authentification (pattern de l'énoncé)
-// Si pas de token → redirige vers index.html
+/**
+ * Vérifie la présence du token JWT.
+ * Si absent → redirige vers index.html.
+ */
 function checkAuthentication() {
     const token = getCookie('token');
     if (!token) {
@@ -476,17 +459,17 @@ function checkAuthentication() {
     return token;
 }
 
-// Étape 4 — POST /api/v1/reviews avec token + body JSON
-// user_id est requis par l'API Flask (review_model validate=True)
-// On le récupère depuis le token JWT
+/**
+ * Envoie un avis à l'API.
+ * Décode le user_id depuis le payload JWT (requis par Flask).
+ * Gère séparément l'échec de décodage JWT et les erreurs réseau.
+ */
 async function submitReview(token, placeId, reviewText, rating) {
-    // Décode le user_id depuis le payload JWT
     let userId;
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         userId = payload.sub || payload.identity;
     } catch (err) {
-        // AVANT : crash silencieux si JWT mal formé
         showMessage('review-error', 'Invalid session. Please log in again.');
         setTimeout(() => { window.location.href = 'login.html'; }, 2000);
         return;
@@ -509,39 +492,37 @@ async function submitReview(token, placeId, reviewText, rating) {
         const data = await response.json().catch(() => null);
         handleResponse(response, data);
     } catch (err) {
-        showMessage('review-error', 'Network error : ' + err.message);
+        showMessage('review-error', 'Network error: ' + err.message);
     }
 }
 
-// Étape 5 — Succès : message + reset + redirect | Échec : message erreur
+/**
+ * Gère la réponse API après soumission d'un avis.
+ * Succès : message vert + reset formulaire + redirect.
+ * Échec  : message d'erreur inline.
+ */
 function handleResponse(response, data) {
     if (response.ok) {
-        // AVANT : alert('Review submitted successfully!');
-        showMessage('review-error', 'Review successfully sent !', 'success');
+        showMessage('review-error', 'Review successfully sent!', 'success');
         const form = document.getElementById('review-form');
         if (form) form.reset();
         const placeId = getPlaceIdFromURL();
         setTimeout(() => {
             if (placeId) window.location.href = `place.html?id=${placeId}`;
-        }, 1500); // laisse le temps de lire le message
+        }, 1500);
     } else {
         const msg = data?.message || data?.error || `Error ${response.status}`;
-        // AVANT : alert('Failed to submit review: ' + msg);
-        showMessage('review-error', 'Error : ' + msg);
+        showMessage('review-error', 'Error: ' + msg);
     }
 }
 
-// Point d'entrée add_review.html
 function initAddReviewPage() {
-    // Étape 1 — auth check (redirige si non connecté)
-    const token = checkAuthentication();
-    // Étape 2 — place ID depuis l'URL
+    const token   = checkAuthentication();
     const placeId = getPlaceIdFromURL();
 
     updateAuthUI();
     setupLogout();
 
-    // Affiche le nom de la place dans le titre
     if (placeId) {
         fetch(`${API_BASE}/places/${placeId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -555,7 +536,6 @@ function initAddReviewPage() {
         .catch(() => {});
     }
 
-    // Étape 3 — event listener sur le formulaire
     const reviewForm = document.getElementById('review-form');
     if (reviewForm) {
         reviewForm.addEventListener('submit', async (event) => {
@@ -564,18 +544,14 @@ function initAddReviewPage() {
             const ratingVal  = document.getElementById('rating').value;
             const rating     = parseInt(ratingVal);
 
-            // Validation côté client
             if (!reviewText) {
-            // AVANT : alert('Please write a review.');
-            showMessage('review-error', 'Merci d\'écrire un avis avant de soumettre.');
-            return;
-           }
-            if (!ratingVal || isNaN(rating)) {
-                // AVANT : alert('Please select a rating.');
-                showMessage('review-error', 'Merci de sélectionner une note.');
+                showMessage('review-error', 'Please write a review before submitting.');
                 return;
             }
-            // Étape 4 — requête AJAX
+            if (!ratingVal || isNaN(rating)) {
+                showMessage('review-error', 'Please select a rating.');
+                return;
+            }
             await submitReview(token, placeId, reviewText, rating);
         });
     }
