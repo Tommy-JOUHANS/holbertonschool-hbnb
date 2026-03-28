@@ -10,14 +10,42 @@ document.addEventListener('DOMContentLoaded', () => {
 const API_URL  = 'http://127.0.0.1:5000';
 const API_BASE = `${API_URL}/api/v1`;
 
+async function loginUser(email, password) {
+    const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    if (response.ok) {
+        const data = await response.json();
+        document.cookie = `token=${data.access_token}; path=/`;
+        window.location.href = 'index.html';
+    } else {
+        // AVANT : alert('Login failed: ' + response.statusText);
+        showMessage('login-error', 'Email ou mot de passe incorrect.');
+    }
+}
+
 function getCookie(name) {
     const match = document.cookie
         .split('; ')
         .find(row => row.startsWith(name + '='));
     return match ? match.split('=')[1] : null;
 }
+
 function getToken()   { return getCookie('token'); }
+
 function isLoggedIn() { return !!getToken(); }
+
+function showMessage(elementId, message, type = 'error') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = message;
+    el.className = type === 'error' ? 'error-msg' : 'success-msg';
+    el.style.display = 'block';
+    // Efface le message après 5 secondes
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
 
 function updateAuthUI() {
     const loginLink = document.getElementById('login-link');
@@ -452,11 +480,19 @@ function checkAuthentication() {
 // user_id est requis par l'API Flask (review_model validate=True)
 // On le récupère depuis le token JWT
 async function submitReview(token, placeId, reviewText, rating) {
+    // Décode le user_id depuis le payload JWT
+    let userId;
     try {
-        // Décode le user_id depuis le payload JWT
-        const payload  = JSON.parse(atob(token.split('.')[1]));
-        const userId   = payload.sub || payload.identity;
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.sub || payload.identity;
+    } catch (err) {
+        // AVANT : crash silencieux si JWT mal formé
+        showMessage('review-error', 'Invalid session. Please log in again.');
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+        return;
+    }
 
+    try {
         const response = await fetch(`${API_BASE}/reviews`, {
             method: 'POST',
             headers: {
@@ -467,30 +503,31 @@ async function submitReview(token, placeId, reviewText, rating) {
                 place_id: placeId,
                 text:     reviewText,
                 rating:   rating,
-                user_id:  userId   // ← requis par review_model Flask
+                user_id:  userId
             })
         });
-        // Étape 5 — gère la réponse
         const data = await response.json().catch(() => null);
         handleResponse(response, data);
     } catch (err) {
-        alert('Network error: ' + err.message);
+        showMessage('review-error', 'Network error : ' + err.message);
     }
 }
 
 // Étape 5 — Succès : message + reset + redirect | Échec : message erreur
 function handleResponse(response, data) {
     if (response.ok) {
-        alert('Review submitted successfully!');
+        // AVANT : alert('Review submitted successfully!');
+        showMessage('review-error', 'Review successfully sent !', 'success');
         const form = document.getElementById('review-form');
         if (form) form.reset();
         const placeId = getPlaceIdFromURL();
-        if (placeId) {
-            window.location.href = `place.html?id=${placeId}`;
-        }
+        setTimeout(() => {
+            if (placeId) window.location.href = `place.html?id=${placeId}`;
+        }, 1500); // laisse le temps de lire le message
     } else {
         const msg = data?.message || data?.error || `Error ${response.status}`;
-        alert('Failed to submit review: ' + msg);
+        // AVANT : alert('Failed to submit review: ' + msg);
+        showMessage('review-error', 'Error : ' + msg);
     }
 }
 
@@ -529,11 +566,13 @@ function initAddReviewPage() {
 
             // Validation côté client
             if (!reviewText) {
-                alert('Please write a review.');
-                return;
-            }
+            // AVANT : alert('Please write a review.');
+            showMessage('review-error', 'Merci d\'écrire un avis avant de soumettre.');
+            return;
+           }
             if (!ratingVal || isNaN(rating)) {
-                alert('Please select a rating.');
+                // AVANT : alert('Please select a rating.');
+                showMessage('review-error', 'Merci de sélectionner une note.');
                 return;
             }
             // Étape 4 — requête AJAX
