@@ -65,20 +65,25 @@ async function fetchPlaces(token) {
     }
 }
 
-function displayPlaces(places) {
+// ============================================================
+//  PAGINATION — style cercles avec ellipsis
+// ============================================================
+let allPlaces   = [];
+let currentData = [];
+const PAGE_SIZE = 9;
+let currentPage = 1;
+
+function renderPlacesPage(places, page) {
     const list = document.getElementById('places-list');
     if (!list) return;
-    list.innerHTML = '';
-    if (!places.length) {
-        list.innerHTML = '<p style="text-align:center;color:#888;">No places available.</p>';
-        return;
-    }
-    places.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    
 
-    places.forEach(place => {
+    const start = (page - 1) * PAGE_SIZE;
+    const slice = places.slice(start, start + PAGE_SIZE);
+
+    list.innerHTML = '';
+    slice.forEach(place => {
         const card = document.createElement('article');
-        card.className = 'place-card';
+        card.className     = 'place-card';
         card.dataset.price = place.price;
         card.innerHTML = `
             <h2>${place.title}</h2>
@@ -87,6 +92,87 @@ function displayPlaces(places) {
         `;
         list.appendChild(card);
     });
+
+    renderPaginationControls(places, page);
+}
+
+function renderPaginationControls(places, page) {
+    const container = document.getElementById('pagination');
+    if (!container) return;
+
+    const totalPages = Math.ceil(places.length / PAGE_SIZE);
+    container.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    // Crée un élément <a> style cercle
+    function makeItem(label, targetPage, isActive, isDisabled, isEllipsis) {
+        const a = document.createElement('a');
+        a.textContent = label;
+        a.href = '#!' + (isEllipsis ? '' : targetPage);
+
+        if (isEllipsis) {
+            a.className = 'cdp_i cdp-ellipsis';
+        } else {
+            a.className = 'cdp_i' + (isActive ? ' active' : '');
+            if (!isDisabled) {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPage = targetPage;
+                    renderPlacesPage(places, currentPage);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            } else {
+                a.style.pointerEvents = 'none';
+                a.style.opacity = '0.4';
+            }
+        }
+        return a;
+    }
+
+    // Wrap CDP
+    const cdp = document.createElement('div');
+    cdp.className = 'cdp';
+    cdp.setAttribute('actpage', page);
+
+    // PREV
+    cdp.appendChild(makeItem('prev', page - 1, false, page === 1, false));
+
+    // Calcul des pages à afficher
+    const pages = new Set([1, totalPages]);
+    for (let i = Math.max(2, page - 2); i <= Math.min(totalPages - 1, page + 2); i++) {
+        pages.add(i);
+    }
+    const sorted = [...pages].sort((a, b) => a - b);
+
+    sorted.forEach((p, idx) => {
+        if (idx > 0 && p - sorted[idx - 1] > 1) {
+            cdp.appendChild(makeItem('...', null, false, false, true));
+        }
+        cdp.appendChild(makeItem(p, p, p === page, false, false));
+    });
+
+    // NEXT
+    cdp.appendChild(makeItem('next', page + 1, false, page === totalPages, false));
+
+    container.appendChild(cdp);
+}
+
+function displayPlaces(places) {
+    const list = document.getElementById('places-list');
+    if (!list) return;
+
+    if (!places.length) {
+        list.innerHTML = '<p style="text-align:center;color:#888;">No places available.</p>';
+        return;
+    }
+
+    // Tri : dernière publication en haut, première en bas
+    places.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    allPlaces   = places;
+    currentData = places;
+    currentPage = 1;
+    renderPlacesPage(currentData, currentPage);
 }
 
 function initIndexPage() {
@@ -104,15 +190,25 @@ function initIndexPage() {
         fetchPlaces(token);
     }
 
+    // Filtre prix
     const filter = document.getElementById('price-filter');
     if (filter) {
         filter.addEventListener('change', (e) => {
             const selected = e.target.value;
-            document.querySelectorAll('.place-card').forEach(card => {
-                const price = parseFloat(card.dataset.price);
-                card.style.display =
-                    (selected === 'all' || price <= parseFloat(selected)) ? '' : 'none';
-            });
+            currentData = selected === 'all'
+                ? allPlaces
+                : allPlaces.filter(p => parseFloat(p.price) <= parseFloat(selected));
+
+            currentPage = 1;
+
+            if (!currentData.length) {
+                document.getElementById('places-list').innerHTML =
+                    '<p style="text-align:center;color:#888;">No places match this filter.</p>';
+                const pag = document.getElementById('pagination');
+                if (pag) pag.innerHTML = '';
+            } else {
+                renderPlacesPage(currentData, currentPage);
+            }
         });
     }
 }
@@ -162,12 +258,17 @@ async function fetchPlaceDetails(token, placeId) {
             } catch {}
         }
 
-        await Promise.all(place.reviews.map(async (review) => {
-        if (!review.user && review.user_id) {
-            const userRes = await fetch(`${API_BASE}/users/${review.user_id}`, { headers });
-            if (userRes.ok) review.user = await userRes.json();
+        // 5. Pour chaque review, charge le nom de l'auteur via user_id
+        if (place.reviews && place.reviews.length > 0) {
+            await Promise.all(place.reviews.map(async (review) => {
+                if (!review.user && review.user_id) {
+                    try {
+                        const userRes = await fetch(`${API_BASE}/users/${review.user_id}`, { headers });
+                        if (userRes.ok) review.user = await userRes.json();
+                    } catch {}
+                }
+            }));
         }
-        }));
 
         displayPlaceDetails(place);
 
@@ -366,7 +467,7 @@ async function submitReview(token, placeId, reviewText, rating) {
                 place_id: placeId,
                 text:     reviewText,
                 rating:   rating,
-                user_id:  userId   
+                user_id:  userId   // ← requis par review_model Flask
             })
         });
         // Étape 5 — gère la réponse
