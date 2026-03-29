@@ -43,6 +43,7 @@ class BaseModel(db.Model):
     def save(self):
         """Marquer l'objet comme modifié."""
         self.updated_at = datetime.utcnow()
+        db.session.add(self) 
  
     def update(self, data: dict):
         """Mise à jour générique (sans validation métier)."""
