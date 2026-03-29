@@ -65,6 +65,42 @@ function renderStars(rating) {
 }
 
 // ============================================================
+//  LOCALISATION
+//  Le modèle Place (Part 3) n'a pas de champ "city".
+//  On cherche la ville dans le titre de la place.
+//  Si un jour l'API expose city/location/address, ils seront
+//  utilisés en priorité automatiquement.
+// ============================================================
+
+const KNOWN_CITIES = [
+    'Dijon', 'Paris', 'Lyon', 'Bordeaux', 'Marseille',
+    'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Lille',
+    'Rennes', 'Grenoble', 'Montpellier', 'Tours', 'Reims'
+];
+
+/**
+ * Extrait la localisation d'une place.
+ * Cherche d'abord dans city/location/address,
+ * puis dans le titre via la liste KNOWN_CITIES.
+ * @param {object} place - Objet place retourné par l'API
+ * @returns {string|null}
+ */
+function extractLocation(place) {
+    if (place.city)     return place.city;
+    if (place.location) return place.location;
+    if (place.address)  return place.address;
+
+    if (place.title) {
+        for (const city of KNOWN_CITIES) {
+            if (place.title.toLowerCase().includes(city.toLowerCase())) {
+                return city;
+            }
+        }
+    }
+    return null;
+}
+
+// ============================================================
 //  LOGIN PAGE
 // ============================================================
 
@@ -83,7 +119,7 @@ async function loginUser(email, password) {
         document.cookie = `token=${data.access_token}; path=/`;
         window.location.href = 'index.html';
     } else {
-        showMessage('login-error', 'Email ou mot de passe incorrect.');
+        showMessage('login-error', 'Incorrect email or password.');
     }
 }
 
@@ -208,6 +244,10 @@ function renderPaginationControls(places, page) {
     container.appendChild(cdp);
 }
 
+/**
+ * Peuple le filtre Location avec les villes trouvées dans les titres.
+ * Utilise extractLocation() pour la cohérence avec applyFilters().
+ */
 function populateLocationFilter(places) {
     const locationFilter = document.getElementById('location-filter');
     if (!locationFilter) return;
@@ -216,7 +256,7 @@ function populateLocationFilter(places) {
 
     const locations = [...new Set(
         places
-            .map(p => p.city || p.location || p.address || null)
+            .map(p => extractLocation(p))
             .filter(Boolean)
     )].sort();
 
@@ -262,14 +302,18 @@ function initIndexPage() {
         fetchPlaces(token);
     }
 
-    // Fonction commune aux deux filtres
+    /**
+     * Applique les deux filtres simultanément (prix + location).
+     * La même fonction extractLocation() est utilisée ici et dans
+     * populateLocationFilter() — cohérence garantie.
+     */
     function applyFilters() {
         const priceVal    = document.getElementById('price-filter')?.value || 'all';
         const locationVal = document.getElementById('location-filter')?.value || 'all';
 
         currentData = allPlaces.filter(p => {
             const matchPrice    = priceVal === 'all' || parseFloat(p.price) <= parseFloat(priceVal);
-            const locationField = p.city || p.location || p.address || '';
+            const locationField = extractLocation(p) || '';
             const matchLocation = locationVal === 'all' || locationField === locationVal;
             return matchPrice && matchLocation;
         });
@@ -286,13 +330,11 @@ function initIndexPage() {
         }
     }
 
-    // Filtre prix
     const priceFilter = document.getElementById('price-filter');
     if (priceFilter) {
         priceFilter.addEventListener('change', applyFilters);
     }
 
-    // Filtre location (peuplé dynamiquement par populateLocationFilter après fetch)
     const locationFilter = document.getElementById('location-filter');
     if (locationFilter) {
         locationFilter.addEventListener('change', applyFilters);
@@ -428,7 +470,7 @@ function displayPlaceDetails(place) {
 
                 let userName = 'Anonymous';
                 if (r.user && typeof r.user === 'object') {
-                    userName = r.user.first_name ?? r.user.name ?? 'Anonymous';
+                    userName = `${r.user.first_name ?? ''} ${r.user.last_name ?? ''}`.trim() || 'Anonymous';
                 } else if (r.user_name) {
                     userName = r.user_name;
                 }
