@@ -127,7 +127,7 @@ async function fetchPlaces(token) {
 // ============================================================
 let allPlaces   = [];
 let currentData = [];
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 6;
 let currentPage = 1;
 
 function renderPlacesPage(places, page) {
