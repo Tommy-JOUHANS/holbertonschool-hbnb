@@ -94,6 +94,7 @@ class ReviewResource(Resource):
         
         try:
             review.update(api.payload)
+            facade.save()
             return review.to_dict(), 200
         except ValueError as e:
             return {'error': str(e)}, 400
