@@ -127,6 +127,7 @@ class UserResource(Resource):
         
         try:
             user.update(update_data)
+            facade.save()
             return user.to_dict(), 200
         except ValueError as e:
             return {"error": str(e)}, 400
