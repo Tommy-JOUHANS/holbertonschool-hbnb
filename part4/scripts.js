@@ -208,6 +208,26 @@ function renderPaginationControls(places, page) {
     container.appendChild(cdp);
 }
 
+function populateLocationFilter(places) {
+    const locationFilter = document.getElementById('location-filter');
+    if (!locationFilter) return;
+
+    locationFilter.innerHTML = '<option value="all">All locations</option>';
+
+    const locations = [...new Set(
+        places
+            .map(p => p.city || p.location || p.address || null)
+            .filter(Boolean)
+    )].sort();
+
+    locations.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.textContent = loc;
+        locationFilter.appendChild(option);
+    });
+}
+
 function displayPlaces(places) {
     const list = document.getElementById('places-list');
     if (!list) return;
@@ -222,6 +242,8 @@ function displayPlaces(places) {
     allPlaces   = places;
     currentData = places;
     currentPage = 1;
+
+    populateLocationFilter(places);
     renderPlacesPage(currentData, currentPage);
 }
 
@@ -240,25 +262,40 @@ function initIndexPage() {
         fetchPlaces(token);
     }
 
-    const filter = document.getElementById('price-filter');
-    if (filter) {
-        filter.addEventListener('change', (e) => {
-            const selected = e.target.value;
-            currentData = selected === 'all'
-                ? allPlaces
-                : allPlaces.filter(p => parseFloat(p.price) <= parseFloat(selected));
+    // Fonction commune aux deux filtres
+    function applyFilters() {
+        const priceVal    = document.getElementById('price-filter')?.value || 'all';
+        const locationVal = document.getElementById('location-filter')?.value || 'all';
 
-            currentPage = 1;
-
-            if (!currentData.length) {
-                document.getElementById('places-list').innerHTML =
-                    '<p style="text-align:center;color:#888;">No places match this filter.</p>';
-                const pag = document.getElementById('pagination');
-                if (pag) pag.innerHTML = '';
-            } else {
-                renderPlacesPage(currentData, currentPage);
-            }
+        currentData = allPlaces.filter(p => {
+            const matchPrice    = priceVal === 'all' || parseFloat(p.price) <= parseFloat(priceVal);
+            const locationField = p.city || p.location || p.address || '';
+            const matchLocation = locationVal === 'all' || locationField === locationVal;
+            return matchPrice && matchLocation;
         });
+
+        currentPage = 1;
+
+        if (!currentData.length) {
+            document.getElementById('places-list').innerHTML =
+                '<p style="text-align:center;color:#888;">No places match this filter.</p>';
+            const pag = document.getElementById('pagination');
+            if (pag) pag.innerHTML = '';
+        } else {
+            renderPlacesPage(currentData, currentPage);
+        }
+    }
+
+    // Filtre prix
+    const priceFilter = document.getElementById('price-filter');
+    if (priceFilter) {
+        priceFilter.addEventListener('change', applyFilters);
+    }
+
+    // Filtre location (peuplé dynamiquement par populateLocationFilter après fetch)
+    const locationFilter = document.getElementById('location-filter');
+    if (locationFilter) {
+        locationFilter.addEventListener('change', applyFilters);
     }
 }
 
