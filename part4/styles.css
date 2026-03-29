@@ -33,12 +33,6 @@ main h1 {
 header {
     background-color: #FF9F43;
     padding: 0.75rem 2rem;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-
 }
  
 header nav {
@@ -83,11 +77,6 @@ footer {
     text-align: center;
     padding: 1rem 2rem;
     margin-top: auto;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
 }
  
 footer p {
