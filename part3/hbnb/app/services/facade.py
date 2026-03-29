@@ -38,9 +38,12 @@ class HBnBFacade:
  
     def save(self):
         """Sauvegarder les changements en base"""
-        if USE_DATABASE:
+        try:
             from hbnb.app import db
             db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
  
     # =========================
     # USER
@@ -73,6 +76,7 @@ class HBnBFacade:
         if not user:
             raise ValueError("User not found")
         user.update(update_data)
+        self.save()
         return user
  
     # =========================
@@ -122,6 +126,7 @@ class HBnBFacade:
                 from hbnb.app import db
                 db.session.rollback()
             raise ValueError(f"Amenity '{new_name}' already exists")
+        self.save()
         return amenity
  
     def add_amenity_to_place(self, place_id, amenity_id):
@@ -191,6 +196,7 @@ class HBnBFacade:
         if not place:
             raise ValueError("Place not found")
         place.update(update_data)
+        self.save()
         return place
  
     def delete_place(self, place_id):
@@ -257,6 +263,7 @@ class HBnBFacade:
         if not review:
             raise ValueError("Review not found")
         review.update(update_data)
+        self.save()
         return review
  
     def delete_review(self, review_id):
