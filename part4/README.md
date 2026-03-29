@@ -418,7 +418,7 @@ You are **immediately redirected** to `index.html` — the form never renders.
 Log in, click **View Details** on a place, then click **Write a Review**.
 The page title shows the place name (fetched dynamically):
 
-![Add review form — ready to fill in](images/readme/task4_place_details_logged)
+![Add review form — ready to fill in](images/readme/task4_place_details_logged.png)
 
 The browser's built-in `required` validation prevents empty submission at the HTML level:
 
