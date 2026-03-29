@@ -25,7 +25,7 @@ http://localhost:5500/index.html
 
 ---
 
-## Task 1 — Design
+## Task 0 — Design
 
 ### Overview
 
@@ -88,7 +88,7 @@ Each page follows this skeleton:
 
 ---
 
-## Task 2 — Login
+## Task 1 — Login
 
 ### How It Works
 
@@ -184,7 +184,7 @@ The cookie is deleted and you are redirected to `index.html` with Login restored
 
 ---
 
-## Task 3 — View Places
+## Task 2 — View Places
 
 ### How It Works
 
@@ -271,7 +271,7 @@ The active page is highlighted in black. PREV is faded on page 1:
 
 ---
 
-## Task 4 — View Place Details
+## Task 3 — View Place Details
 
 ### How It Works
 
@@ -343,7 +343,7 @@ The newly submitted review appears immediately on the place page after redirect:
 
 ---
 
-## Task 5 — Add Review
+## Task 4 — Add Review
 
 ### How It Works
 
