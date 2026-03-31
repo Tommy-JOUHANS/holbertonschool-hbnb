@@ -35,7 +35,16 @@ UML Technical Documentation
 ### Documentation
 - **Gamma.app** – https://gamma.app/
 - **See the online documentation**:
+ *Part 1*
  - https://gamma.app/docs/HBnB-UML-Technical-Documentation-gyee6k4t82ctpm0
  - https://drive.google.com/file/d/178fUZxVHv1XYnMCBpZm9j3n7DB1yU0Mf/view?usp=drive_link
+
+ *Part 2*
  - https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part2/HBnB_Technical_Documentation.md
+ 
+ *Part 3*
  - https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part3/HBnB_Technical_Documentation.md
+ 
+ *Part 4*
+ - https://github.com/Tommy-JOUHANS/holbertonschool-hbnb/blob/main/part4/HBnB_Technical_Documentation.md
+ 
