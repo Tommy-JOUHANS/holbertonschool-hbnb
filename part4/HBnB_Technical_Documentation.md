@@ -151,6 +151,11 @@ If a required field is empty and you click Login, the browser's native HTML5 val
 
 ![HTML5 required field validation tooltip](images/readme/task2_login_html5_validation.png)
 
+
+**To return to the homepage, tap the HBnb logo**
+
+![HTML5 tap the HBnb logo](images/readme/click_to_home.png)
+
 #### Step 2 — Test with wrong credentials
 
 Enter a valid email but the wrong password and click Login.
@@ -233,6 +238,8 @@ function populateCityFilter(places) { ... }
 function initIndexPage() { ... }
 ```
 
+
+
 ### How to Test
 
 #### Step 1 — Not logged in
@@ -248,12 +255,24 @@ After login, **Logout** replaces Login. Places are fetched with the JWT token:
 
 ![Places list — logged in, Logout in header](images/readme/task3_index_logged_in.png)
 
-#### Step 3 — Price filter
+#### Step 3.1 — Price filter
+
+Click on the price filter **Max Price** to search for the maximum price:
+
+![Price filter](images/readme/filter-cursor-price.png)
+
 
 Select **Max Price: $100** — only places at or under $100/night are shown instantly.
 Pagination updates to reflect the filtered count:
 
 ![Price filter active — $100 max](images/readme/task3_filter_price_100.png)
+
+#### Step 3.2 — Location filter
+
+Click on the location filter to select cities:
+
+![Location filter active](images/readme/filter-cursor-location.png)
+
 
 #### Step 4 — Pagination
 
